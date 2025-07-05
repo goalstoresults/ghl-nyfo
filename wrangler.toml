@@ -1,4 +1,6 @@
-name = "ghl-nyfo"
+name = "ghl-nyfo-search"
+type = "javascript"
+account_id = "ae64efb1f95a08aa40f7103bf79178ea"
 compatibility_date = "2024-01-01"
 
 [vars]
