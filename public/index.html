@@ -1,1 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Find Contact</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      padding: 50px;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 600px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #results {
+      margin-top: 30px;
+    }
+    .contact-card {
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Find Contact</h2>
+    <label for="firstName">First Name</label>
+    <input type="text" id="firstName" placeholder="Enter first name" />
 
+    <label for="lastName">Last Name</label>
+    <input type="text" id="lastName" placeholder="Enter last name" />
+
+    <button onclick="searchContacts()">Search</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    async function searchContacts() {
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '';
+
+      if (!first && !last) {
+        resultsDiv.innerHTML = '<p>Please enter at least one name field.</p>';
+        return;
+      }
+
+      const url = `https://ghl-nyfo-search.dennis-e64.workers.dev?first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          data.forEach(contact => {
+            const card = document.createElement('div');
+            card.className = 'contact-card';
+            card.innerHTML = `
+              <strong>${contact.first_name || ''} ${contact.last_name || ''}</strong><br/>
+              ID: ${contact.id}<br/>
+              Email: ${contact.email || '—'}<br/>
+              Phone: ${contact.phone || '—'}
+            `;
+            resultsDiv.appendChild(card);
+          });
+        } else {
+          resultsDiv.innerHTML = '<p>No contacts found.</p>';
+        }
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = '<p style="color:red;">Error searching contacts.</p>';
+      }
+    }
+  </script>
+</body>
+</html>
