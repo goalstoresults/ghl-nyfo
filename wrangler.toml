@@ -1,6 +1,5 @@
 name = "ghl-nyfo"
 compatibility_date = "2024-01-01"
-pages_build_output_dir = "./public"
 
 [vars]
 BASEROW_API_TOKEN = "oOcGyvGsuhv7ZfvcSo7nJLr5H30UA6Yv"
