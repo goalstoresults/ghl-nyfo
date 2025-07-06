@@ -7,38 +7,55 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background-color: #f5f5f5;
+      padding: 2rem;
       display: flex;
       justify-content: center;
-      padding: 40px;
     }
     .container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      width: 500px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
     }
     h2 {
-      margin-top: 0;
+      margin-bottom: 1rem;
     }
-    input, button {
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+    input {
       width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      font-size: 16px;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
     .result {
-      background: #f0f0ff;
-      padding: 20px;
-      margin-top: 20px;
-      border-radius: 8px;
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #efefff;
+      border-radius: 6px;
     }
     .error {
       color: red;
+      margin-top: 1rem;
     }
-    hr {
-      margin: 10px 0;
+    ul {
+      padding-left: 1rem;
     }
   </style>
 </head>
@@ -46,35 +63,39 @@
   <div class="container">
     <h2>Search Contact Relationships</h2>
     <label>Email (preferred)</label>
-    <input id="email" placeholder="someone@example.com" />
+    <input type="email" id="email" placeholder="example@example.com"/>
     <label>First Name</label>
-    <input id="firstName" placeholder="Optional if email used" />
+    <input type="text" id="first_name" placeholder="Optional if email used"/>
     <label>Last Name</label>
-    <input id="lastName" placeholder="Optional if email used" />
+    <input type="text" id="last_name" placeholder="Optional if email used"/>
     <button onclick="search()">Search</button>
-    <div id="output" class="result"></div>
+
+    <div class="result" id="result" style="display:none;"></div>
+    <div class="error" id="error" style="display:none;"></div>
   </div>
 
   <script>
     async function search() {
       const email = document.getElementById("email").value.trim();
-      const firstName = document.getElementById("firstName").value.trim();
-      const lastName = document.getElementById("lastName").value.trim();
-      const output = document.getElementById("output");
-      output.innerHTML = '';
+      const firstName = document.getElementById("first_name").value.trim();
+      const lastName = document.getElementById("last_name").value.trim();
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
 
-      const params = new URLSearchParams();
+      resultDiv.style.display = "none";
+      errorDiv.style.display = "none";
+
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
       if (email) {
-        params.append("email", email);
+        url += `email=${encodeURIComponent(email)}`;
       } else if (firstName && lastName) {
-        params.append("first_name", firstName);
-        params.append("last_name", lastName);
+        url += `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
       } else {
-        output.innerHTML = '<p class="error">Please enter either an email or both first and last names.</p>';
+        errorDiv.textContent = "Please enter email or both first and last name.";
+        errorDiv.style.display = "block";
         return;
       }
 
-      const url = `https://ghl-nyfo-api.dennis-e64.workers.dev/?${params.toString()}`;
       console.log("Fetching from:", url);
 
       try {
@@ -82,21 +103,30 @@
         if (!res.ok) throw new Error("Fetch failed");
 
         const data = await res.json();
-        console.log("Response:", data);
+        console.log("Response Data:", data);
 
-        let html = `<strong>Email:</strong> ${data.email}<br/><strong>Phone:</strong> ${data.phone}<hr/>`;
-        if (data.relationships.length > 0) {
-          html += data.relationships.map(r => 
-            `<strong>${r.related_to_name}</strong> - ${r.relationship_type} (${r.relationship_role})`
-          ).join("<br/>");
+        const emailVal = data.email || "N/A";
+        const phoneVal = data.phone || "N/A";
+
+        let html = `<p><strong>Email:</strong> ${emailVal}</p>`;
+        html += `<p><strong>Phone:</strong> ${phoneVal}</p>`;
+
+        if (data.relationships && data.relationships.length > 0) {
+          html += "<ul>";
+          data.relationships.forEach(r => {
+            html += `<li><strong>${r.relationship_type}</strong> - ${r.related_to_name} (${r.relationship_role})</li>`;
+          });
+          html += "</ul>";
         } else {
-          html += "No relationships found.";
+          html += "<p>No relationships found.</p>";
         }
 
-        output.innerHTML = html;
+        resultDiv.innerHTML = html;
+        resultDiv.style.display = "block";
       } catch (err) {
         console.error("Error fetching:", err);
-        output.innerHTML = `<p class="error">Error: Failed to fetch</p>`;
+        errorDiv.textContent = "Error: Failed to fetch";
+        errorDiv.style.display = "block";
       }
     }
   </script>
