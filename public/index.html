@@ -57,8 +57,8 @@
   <div class="container">
     <h2>Search Contact Relationships</h2>
     <form id="search-form">
-      <label for="email">Email (preferred)</label>
-      <input type="text" id="email" name="email" placeholder="example@email.com"/>
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" />
 
       <label for="first-name">First Name</label>
       <input type="text" id="first-name" name="first-name" />
@@ -75,6 +75,7 @@
   <script>
     document.getElementById('search-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+
       const email = document.getElementById('email').value.trim();
       const firstName = document.getElementById('first-name').value.trim();
       const lastName = document.getElementById('last-name').value.trim();
@@ -83,37 +84,44 @@
       resultsDiv.style.display = 'none';
       resultsDiv.innerHTML = '';
 
-      const params = new URLSearchParams();
+      let query = '';
       if (email) {
-        params.append('email', email);
+        query = `email=${encodeURIComponent(email)}`;
+      } else if (firstName && lastName) {
+        query = `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
       } else {
-        if (firstName) params.append('first_name', firstName);
-        if (lastName) params.append('last_name', lastName);
+        resultsDiv.innerHTML = '<p style="color:red;">Please enter email or first and last name.</p>';
+        resultsDiv.style.display = 'block';
+        return;
       }
 
       try {
-        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?${params.toString()}`);
+        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?${query}`);
         const data = await res.json();
 
-        console.log('Debug Response:', data);
+        console.log("🔍 Debug Output:", data.debug);  // Debug to browser console
 
-        if (data.error) {
-          resultsDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
-        } else {
-          let output = `<strong>Email:</strong> ${data.email || 'N/A'}<br/><strong>Phone:</strong> ${data.phone || 'N/A'}<hr/>`;
+        let html = '';
 
-          if (data.relationships && data.relationships.length > 0) {
-            output += data.relationships.map(rel => {
-              return `<strong>${rel.relationship_type || 'N/A'}</strong> - ${rel.related_to_name || 'Unknown'} (${rel.relationship_role || 'N/A'})`;
-            }).join('<hr/>');
-          } else {
-            output += `<p>No relationships found.</p>`;
-          }
-
-          resultsDiv.innerHTML = output;
+        if (data.email || data.phone) {
+          html += `<p><strong>Email:</strong> ${data.email || 'N/A'}<br/>`;
+          html += `<strong>Phone:</strong> ${data.phone || 'N/A'}</p>`;
         }
 
+        if (data.relationships && data.relationships.length > 0) {
+          html += '<h4>Relationships:</h4>';
+          html += data.relationships.map(rel => `
+            <div>
+              <strong>${rel.relationship_type}</strong> - ${rel.related_to_name} (${rel.relationship_role || 'N/A'})
+            </div>
+          `).join('<hr/>');
+        } else {
+          html += '<p>No relationships found.</p>';
+        }
+
+        resultsDiv.innerHTML = html;
         resultsDiv.style.display = 'block';
+
       } catch (err) {
         resultsDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
         resultsDiv.style.display = 'block';
