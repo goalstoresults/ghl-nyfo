@@ -80,7 +80,7 @@
       resultsDiv.innerHTML = '';
 
       try {
-        const res = await fetch(`/api/search-contact?first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`);
+        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`);
         const data = await res.json();
 
         if (Array.isArray(data) && data.length > 0) {
