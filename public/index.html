@@ -51,6 +51,10 @@
       background: #eef;
       border-radius: 6px;
     }
+    .divider {
+      margin: 1rem 0;
+      border-top: 1px solid #999;
+    }
   </style>
 </head>
 <body>
@@ -85,34 +89,29 @@
 
         if (data.error) {
           resultsDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
-        } else if (data.message === "Contact not found.") {
-          resultsDiv.innerHTML = `<p>${data.message}</p>`;
         } else {
-          // Contact Info Section
-          const contactInfo = document.createElement('div');
-          contactInfo.innerHTML = `
-            <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
-            <p><strong>Phone:</strong> ${data.phone || 'N/A'}</p>
-            <hr/>
-          `;
-          resultsDiv.appendChild(contactInfo);
-
-          // Relationships Section
-          if (Array.isArray(data.relationships) && data.relationships.length > 0) {
-            const validRels = data.relationships.filter(rel => rel.relationship_type && rel.relationship_role);
-            if (validRels.length > 0) {
-              validRels.forEach(rel => {
-                const relDiv = document.createElement('div');
-                relDiv.innerHTML = `
-                  <strong>${rel.relationship_type.value}</strong> - ${rel.relationship_role.value}
-                `;
-                resultsDiv.appendChild(relDiv);
-              });
-            } else {
-              resultsDiv.innerHTML += `<p>No valid relationships found.</p>`;
-            }
+          if (data.email || data.phone) {
+            resultsDiv.innerHTML += `
+              <div>
+                <strong>Email:</strong> ${data.email || 'N/A'}<br/>
+                <strong>Phone:</strong> ${data.phone || 'N/A'}
+              </div>
+            `;
           } else {
-            resultsDiv.innerHTML += `<p>No relationships found.</p>`;
+            resultsDiv.innerHTML += `<p><strong>Contact not found.</strong></p>`;
+          }
+
+          if (Array.isArray(data.relationships) && data.relationships.length > 0) {
+            resultsDiv.innerHTML += `<div class="divider"></div>`;
+            data.relationships.forEach(rel => {
+              resultsDiv.innerHTML += `
+                <div>
+                  <strong>${rel.relationship_type?.value || 'N/A'}</strong> - ${rel.related_to_name || 'Unknown'} (${rel.relationship_role?.value || 'N/A'})
+                </div>
+              `;
+            });
+          } else {
+            resultsDiv.innerHTML += `<div class="divider"></div><p>No relationships found.</p>`;
           }
         }
 
