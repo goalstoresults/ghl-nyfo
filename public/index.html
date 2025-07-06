@@ -1,108 +1,52 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Search</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 2rem;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      margin-top: 0;
-    }
-    label {
-      display: block;
-      margin-top: 1rem;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.25rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      margin-top: 1.5rem;
-      padding: 0.75rem 1.5rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #005fa3;
-    }
-    .result {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: #eef;
-      border-radius: 6px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Search Contact Relationships</h2>
-    <form id="search-form">
-      <label for="first-name">First Name</label>
-      <input type="text" id="first-name" name="first-name" required />
+<script>
+  document.getElementById('search-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const firstName = document.getElementById('first-name').value.trim();
+    const lastName = document.getElementById('last-name').value.trim();
 
-      <label for="last-name">Last Name</label>
-      <input type="text" id="last-name" name="last-name" required />
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.style.display = 'none';
+    resultsDiv.innerHTML = '';
 
-      <button type="submit">Search</button>
-    </form>
+    try {
+      const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`);
+      const data = await res.json();
 
-    <div id="results" class="result" style="display: none;"></div>
-  </div>
+      if (data.error) {
+        resultsDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+      } else {
+        // Contact Info Section
+        const contactInfo = document.createElement('div');
+        contactInfo.innerHTML = `
+          <p><strong>Email:</strong> ${data.email || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${data.phone || 'N/A'}</p>
+          <hr/>
+        `;
+        resultsDiv.appendChild(contactInfo);
 
-  <script>
-    document.getElementById('search-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const firstName = document.getElementById('first-name').value.trim();
-      const lastName = document.getElementById('last-name').value.trim();
-
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.style.display = 'none';
-      resultsDiv.innerHTML = '';
-
-      try {
-        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`);
-        const data = await res.json();
-
-        if (Array.isArray(data) && data.length > 0) {
-          resultsDiv.innerHTML = data.map(rel => `
-            <div>
-              <strong>${rel.relationship_type}</strong> - ${rel.related_to_name} (${rel.relationship_role || 'N/A'})
-              <br/><small>${rel.notes || ''}</small>
-            </div>
-            <hr/>
-          `).join('');
-        } else if (data.message) {
-          resultsDiv.innerHTML = `<p>${data.message}</p>`;
+        // Relationships Section
+        if (Array.isArray(data.relationships) && data.relationships.length > 0) {
+          const validRels = data.relationships.filter(rel => rel.relationship_type && rel.relationship_role);
+          if (validRels.length > 0) {
+            validRels.forEach(rel => {
+              const relDiv = document.createElement('div');
+              relDiv.innerHTML = `
+                <strong>${rel.relationship_type.value}</strong> - ${rel.relationship_role.value}
+              `;
+              resultsDiv.appendChild(relDiv);
+            });
+          } else {
+            resultsDiv.innerHTML += `<p>No valid relationships found.</p>`;
+          }
         } else {
-          resultsDiv.innerHTML = `<p>No relationships found.</p>`;
+          resultsDiv.innerHTML += `<p>No relationships found.</p>`;
         }
-
-        resultsDiv.style.display = 'block';
-      } catch (err) {
-        resultsDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
-        resultsDiv.style.display = 'block';
       }
-    });
-  </script>
-</body>
-</html>
+
+      resultsDiv.style.display = 'block';
+    } catch (err) {
+      resultsDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      resultsDiv.style.display = 'block';
+    }
+  });
+</script>
