@@ -3,130 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Search</title>
+  <title>Search Contact Relationships</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 2rem;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
     }
     .container {
-      max-width: 600px;
-      margin: 0 auto;
       background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 30px;
+      border-radius: 10px;
+      width: 500px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     h2 {
       margin-top: 0;
     }
-    label {
-      display: block;
-      margin-top: 1rem;
-    }
-    input[type="text"] {
+    input, button {
       width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.25rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      margin-top: 1.5rem;
-      padding: 0.75rem 1.5rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #005fa3;
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
     }
     .result {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: #eef;
-      border-radius: 6px;
+      background: #f0f0ff;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 8px;
+    }
+    .error {
+      color: red;
+    }
+    hr {
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Search Contact Relationships</h2>
-    <form id="search-form">
-      <label for="email">Email</label>
-      <input type="text" id="email" name="email" />
-
-      <label for="first-name">First Name</label>
-      <input type="text" id="first-name" name="first-name" />
-
-      <label for="last-name">Last Name</label>
-      <input type="text" id="last-name" name="last-name" />
-
-      <button type="submit">Search</button>
-    </form>
-
-    <div id="results" class="result" style="display: none;"></div>
+    <label>Email (preferred)</label>
+    <input id="email" placeholder="someone@example.com" />
+    <label>First Name</label>
+    <input id="firstName" placeholder="Optional if email used" />
+    <label>Last Name</label>
+    <input id="lastName" placeholder="Optional if email used" />
+    <button onclick="search()">Search</button>
+    <div id="output" class="result"></div>
   </div>
 
   <script>
-    document.getElementById('search-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function search() {
+      const email = document.getElementById("email").value.trim();
+      const firstName = document.getElementById("firstName").value.trim();
+      const lastName = document.getElementById("lastName").value.trim();
+      const output = document.getElementById("output");
+      output.innerHTML = '';
 
-      const email = document.getElementById('email').value.trim();
-      const firstName = document.getElementById('first-name').value.trim();
-      const lastName = document.getElementById('last-name').value.trim();
-
-      const resultsDiv = document.getElementById('results');
-      resultsDiv.style.display = 'none';
-      resultsDiv.innerHTML = '';
-
-      let query = '';
+      const params = new URLSearchParams();
       if (email) {
-        query = `email=${encodeURIComponent(email)}`;
+        params.append("email", email);
       } else if (firstName && lastName) {
-        query = `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
+        params.append("first_name", firstName);
+        params.append("last_name", lastName);
       } else {
-        resultsDiv.innerHTML = '<p style="color:red;">Please enter email or first and last name.</p>';
-        resultsDiv.style.display = 'block';
+        output.innerHTML = '<p class="error">Please enter either an email or both first and last names.</p>';
         return;
       }
 
+      const url = `https://ghl-nyfo-api.dennis-e64.workers.dev/?${params.toString()}`;
+      console.log("Fetching from:", url);
+
       try {
-        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?${query}`);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Fetch failed");
+
         const data = await res.json();
+        console.log("Response:", data);
 
-        console.log("🔍 Debug Output:", data.debug);  // Debug to browser console
-
-        let html = '';
-
-        if (data.email || data.phone) {
-          html += `<p><strong>Email:</strong> ${data.email || 'N/A'}<br/>`;
-          html += `<strong>Phone:</strong> ${data.phone || 'N/A'}</p>`;
-        }
-
-        if (data.relationships && data.relationships.length > 0) {
-          html += '<h4>Relationships:</h4>';
-          html += data.relationships.map(rel => `
-            <div>
-              <strong>${rel.relationship_type}</strong> - ${rel.related_to_name} (${rel.relationship_role || 'N/A'})
-            </div>
-          `).join('<hr/>');
+        let html = `<strong>Email:</strong> ${data.email}<br/><strong>Phone:</strong> ${data.phone}<hr/>`;
+        if (data.relationships.length > 0) {
+          html += data.relationships.map(r => 
+            `<strong>${r.related_to_name}</strong> - ${r.relationship_type} (${r.relationship_role})`
+          ).join("<br/>");
         } else {
-          html += '<p>No relationships found.</p>';
+          html += "No relationships found.";
         }
 
-        resultsDiv.innerHTML = html;
-        resultsDiv.style.display = 'block';
-
+        output.innerHTML = html;
       } catch (err) {
-        resultsDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
-        resultsDiv.style.display = 'block';
+        console.error("Error fetching:", err);
+        output.innerHTML = `<p class="error">Error: Failed to fetch</p>`;
       }
-    });
+    }
   </script>
 </body>
 </html>
