@@ -60,11 +60,18 @@
       border-top: 1px solid #ccc;
       margin: 1rem 0;
     }
+    .note {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 1rem;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Search Contact Relationships</h2>
+    <p class="note">Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+
     <form id="search-form">
       <label for="first-name">First Name</label>
       <input type="text" id="first-name" name="first-name" />
@@ -82,12 +89,32 @@
   </div>
 
   <script>
+    const firstInput = document.getElementById('first-name');
+    const lastInput = document.getElementById('last-name');
+    const emailInput = document.getElementById('email');
+
+    emailInput.addEventListener('input', () => {
+      const disableNameFields = emailInput.value.trim().length > 0;
+      firstInput.disabled = disableNameFields;
+      lastInput.disabled = disableNameFields;
+    });
+
+    firstInput.addEventListener('input', () => {
+      const disableEmail = firstInput.value.trim().length > 0 || lastInput.value.trim().length > 0;
+      emailInput.disabled = disableEmail;
+    });
+
+    lastInput.addEventListener('input', () => {
+      const disableEmail = firstInput.value.trim().length > 0 || lastInput.value.trim().length > 0;
+      emailInput.disabled = disableEmail;
+    });
+
     document.getElementById('search-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const firstName = document.getElementById('first-name').value.trim();
-      const lastName = document.getElementById('last-name').value.trim();
-      const email = document.getElementById('email').value.trim();
+      const firstName = firstInput.value.trim().toLowerCase();
+      const lastName = lastInput.value.trim().toLowerCase();
+      const email = emailInput.value.trim().toLowerCase();
       const resultsDiv = document.getElementById('results');
 
       resultsDiv.style.display = 'none';
@@ -97,7 +124,6 @@
       if (email) {
         queryParams = `email=${encodeURIComponent(email)}`;
       } else if (firstName && lastName) {
-        // 🔥 Fix here: using snake_case keys
         queryParams = `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
       } else {
         resultsDiv.innerHTML = `<p style="color:red;">Please enter either email or first + last name.</p>`;
@@ -127,7 +153,7 @@
           data.relationships.forEach((rel) => {
             html += `<div>
               <strong>${rel.relationship_type || 'N/A'}</strong> – ${rel.related_to_name || 'Unknown'}
-              (${rel.relationship_role || 'N/A'})
+              (${rel.relationship_role || 'N/A'}) [ID: ${rel.related_to_id || 'N/A'}]
             </div>`;
           });
         } else {
