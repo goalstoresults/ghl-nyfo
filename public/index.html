@@ -1,172 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Search</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 2rem;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      margin-top: 0;
-    }
-    label {
-      display: block;
-      margin-top: 1rem;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 0.5rem;
-      margin-top: 0.25rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      margin-top: 1.5rem;
-      padding: 0.75rem 1.5rem;
-      background: #0077cc;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #005fa3;
-    }
-    .result {
-      margin-top: 2rem;
-      padding: 1rem;
-      background: #eef;
-      border-radius: 6px;
-    }
-    .section-title {
-      margin-top: 1.5rem;
-      font-weight: bold;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #ccc;
-      margin: 1rem 0;
-    }
-    .note {
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 1rem;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Search Contact Relationships</h2>
-    <p class="note">Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+<!-- Add this section below your existing contact display -->
 
-    <form id="search-form">
-      <label for="first-name">First Name</label>
-      <input type="text" id="first-name" name="first-name" />
+<hr>
+<button id="toggleAddForm">+ Add Relationship</button>
 
-      <label for="last-name">Last Name</label>
-      <input type="text" id="last-name" name="last-name" />
+<div id="addRelationshipForm" style="display:none; margin-top: 1em;">
+  <h3>Add New Relationship</h3>
+  <p><strong>Enter Related Contact Info</strong></p>
+  <label>First Name:</label><br>
+  <input type="text" id="relatedFirstName"><br>
+  <label>Last Name:</label><br>
+  <input type="text" id="relatedLastName"><br>
+  <label>OR Email:</label><br>
+  <input type="email" id="relatedEmail"><br><br>
 
-      <label for="email">Email</label>
-      <input type="text" id="email" name="email" />
+  <label>Relationship Type:</label><br>
+  <input type="text" id="relationshipType"><br>
+  <label>Relationship Role:</label><br>
+  <input type="text" id="relationshipRole"><br><br>
 
-      <button type="submit">Search</button>
-    </form>
+  <button id="saveRelationship">Save Relationship</button>
+  <p id="saveStatus" style="color: green; margin-top: 1em;"></p>
+</div>
 
-    <div id="results" class="result" style="display: none;"></div>
-  </div>
+<script>
+// Toggle form visibility
+document.getElementById("toggleAddForm").onclick = () => {
+  const form = document.getElementById("addRelationshipForm");
+  form.style.display = form.style.display === "none" ? "block" : "none";
+};
 
-  <script>
-    const firstInput = document.getElementById('first-name');
-    const lastInput = document.getElementById('last-name');
-    const emailInput = document.getElementById('email');
+// Save relationship
+document.getElementById("saveRelationship").onclick = async () => {
+  const relatedFirst = document.getElementById("relatedFirstName").value.trim();
+  const relatedLast = document.getElementById("relatedLastName").value.trim();
+  const relatedEmail = document.getElementById("relatedEmail").value.trim();
+  const type = document.getElementById("relationshipType").value.trim();
+  const role = document.getElementById("relationshipRole").value.trim();
 
-    emailInput.addEventListener('input', () => {
-      const disableNameFields = emailInput.value.trim().length > 0;
-      firstInput.disabled = disableNameFields;
-      lastInput.disabled = disableNameFields;
-    });
+  const data = {
+    related_first: relatedFirst,
+    related_last: relatedLast,
+    related_email: relatedEmail,
+    relationship_type: type,
+    relationship_role: role,
+    source_contact_id: window.currentContactId || null  // must be set from main search logic
+  };
 
-    firstInput.addEventListener('input', () => {
-      const disableEmail = firstInput.value.trim().length > 0 || lastInput.value.trim().length > 0;
-      emailInput.disabled = disableEmail;
-    });
+  const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/save-relationship", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
 
-    lastInput.addEventListener('input', () => {
-      const disableEmail = firstInput.value.trim().length > 0 || lastInput.value.trim().length > 0;
-      emailInput.disabled = disableEmail;
-    });
-
-    document.getElementById('search-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const firstName = firstInput.value.trim().toLowerCase();
-      const lastName = lastInput.value.trim().toLowerCase();
-      const email = emailInput.value.trim().toLowerCase();
-      const resultsDiv = document.getElementById('results');
-
-      resultsDiv.style.display = 'none';
-      resultsDiv.innerHTML = '';
-
-      let queryParams = '';
-      if (email) {
-        queryParams = `email=${encodeURIComponent(email)}`;
-      } else if (firstName && lastName) {
-        queryParams = `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
-      } else {
-        resultsDiv.innerHTML = `<p style="color:red;">Please enter either email or first + last name.</p>`;
-        resultsDiv.style.display = 'block';
-        return;
-      }
-
-      try {
-        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev/?${queryParams}`);
-        const data = await res.json();
-        console.log('DEBUG:', data.debug); // Debug output
-
-        let html = '';
-
-        // Contact info section
-        if (data.email && data.email !== 'N/A') {
-          html += `<div class="section-title">Contact Info</div>`;
-          html += `<p><strong>Email:</strong> ${data.email}<br/><strong>Phone:</strong> ${data.phone || 'N/A'}</p>`;
-          html += '<hr/>';
-        } else {
-          html += `<p style="color:red;">Contact not found.</p>`;
-        }
-
-        // Relationship section
-        if (Array.isArray(data.relationships) && data.relationships.length > 0) {
-          html += `<div class="section-title">Relationships</div>`;
-          data.relationships.forEach((rel) => {
-            html += `<div>
-              <strong>${rel.relationship_type || 'N/A'}</strong> – ${rel.related_to_name || 'Unknown'}
-              (${rel.relationship_role || 'N/A'}) [ID: ${rel.related_to_id || 'N/A'}]
-            </div>`;
-          });
-        } else {
-          html += `<p>No relationships found.</p>`;
-        }
-
-        resultsDiv.innerHTML = html;
-        resultsDiv.style.display = 'block';
-      } catch (err) {
-        resultsDiv.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
-        resultsDiv.style.display = 'block';
-      }
-    });
-  </script>
-</body>
-</html>
+  const json = await res.json();
+  const status = document.getElementById("saveStatus");
+  if (res.ok) {
+    status.style.color = "green";
+    status.textContent = "Relationship saved!";
+  } else {
+    status.style.color = "red";
+    status.textContent = "Error: " + (json?.message || "Failed to save");
+  }
+};
+</script>
