@@ -97,6 +97,7 @@
       if (email) {
         queryParams = `email=${encodeURIComponent(email)}`;
       } else if (firstName && lastName) {
+        // 🔥 Fix here: using snake_case keys
         queryParams = `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
       } else {
         resultsDiv.innerHTML = `<p style="color:red;">Please enter either email or first + last name.</p>`;
