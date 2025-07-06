@@ -1,65 +1,182 @@
-<!-- Add this section below your existing contact display -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NYFO Contact Relationship Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7fc;
+      padding: 40px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .row input {
+      flex: 1;
+      padding: 8px;
+    }
+    .or-label {
+      text-align: center;
+      margin: 10px 0;
+      font-weight: bold;
+      color: #777;
+    }
+    button {
+      padding: 10px 20px;
+      background: #0073e6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .results, .add-relationship-form {
+      background: #eef0ff;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .relationship {
+      margin: 5px 0;
+    }
+    .not-found {
+      color: red;
+    }
+    .hidden {
+      display: none;
+    }
+    label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Search Contact Relationships</h2>
+    <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+    
+    <div class="row">
+      <input id="firstName" placeholder="First Name" />
+      <input id="lastName" placeholder="Last Name" />
+    </div>
 
-<hr>
-<button id="toggleAddForm">+ Add Relationship</button>
+    <div class="or-label">— OR —</div>
 
-<div id="addRelationshipForm" style="display:none; margin-top: 1em;">
-  <h3>Add New Relationship</h3>
-  <p><strong>Enter Related Contact Info</strong></p>
-  <label>First Name:</label><br>
-  <input type="text" id="relatedFirstName"><br>
-  <label>Last Name:</label><br>
-  <input type="text" id="relatedLastName"><br>
-  <label>OR Email:</label><br>
-  <input type="email" id="relatedEmail"><br><br>
+    <input id="email" placeholder="Email" style="width:100%; padding:8px;" />
 
-  <label>Relationship Type:</label><br>
-  <input type="text" id="relationshipType"><br>
-  <label>Relationship Role:</label><br>
-  <input type="text" id="relationshipRole"><br><br>
+    <button onclick="searchContact()">Search</button>
 
-  <button id="saveRelationship">Save Relationship</button>
-  <p id="saveStatus" style="color: green; margin-top: 1em;"></p>
-</div>
+    <div id="resultPanel" class="results hidden">
+      <div id="contactInfo"></div>
+      <h3>Relationships</h3>
+      <div id="relationshipList"></div>
+      <button onclick="showAddForm()">Add Relationship</button>
+    </div>
 
-<script>
-// Toggle form visibility
-document.getElementById("toggleAddForm").onclick = () => {
-  const form = document.getElementById("addRelationshipForm");
-  form.style.display = form.style.display === "none" ? "block" : "none";
-};
+    <div id="addForm" class="add-relationship-form hidden">
+      <h3>Search Related Contact</h3>
+      <div class="row">
+        <input id="relFirstName" placeholder="First Name" />
+        <input id="relLastName" placeholder="Last Name" />
+      </div>
+      <div class="or-label">— OR —</div>
+      <input id="relEmail" placeholder="Email" style="width:100%; padding:8px;" />
+      <button onclick="lookupRelatedContact()">Find Related Contact</button>
 
-// Save relationship
-document.getElementById("saveRelationship").onclick = async () => {
-  const relatedFirst = document.getElementById("relatedFirstName").value.trim();
-  const relatedLast = document.getElementById("relatedLastName").value.trim();
-  const relatedEmail = document.getElementById("relatedEmail").value.trim();
-  const type = document.getElementById("relationshipType").value.trim();
-  const role = document.getElementById("relationshipRole").value.trim();
+      <div id="relationshipFields" class="hidden">
+        <div class="row">
+          <input id="relType" placeholder="Relationship Type" />
+          <input id="relRole" placeholder="Relationship Role" />
+        </div>
+        <button onclick="saveRelationship()">Save Relationship</button>
+      </div>
+      <div id="relatedNotFound" class="not-found hidden">Related contact not found.</div>
+    </div>
+  </div>
 
-  const data = {
-    related_first: relatedFirst,
-    related_last: relatedLast,
-    related_email: relatedEmail,
-    relationship_type: type,
-    relationship_role: role,
-    source_contact_id: window.currentContactId || null  // must be set from main search logic
-  };
+  <script>
+    async function searchContact() {
+      const email = document.getElementById("email").value.trim();
+      const first = document.getElementById("firstName").value.trim();
+      const last = document.getElementById("lastName").value.trim();
+      const query = email
+        ? `email=${encodeURIComponent(email)}`
+        : `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
 
-  const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/save-relationship", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  });
+      const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev/?${query}`);
+      const data = await res.json();
 
-  const json = await res.json();
-  const status = document.getElementById("saveStatus");
-  if (res.ok) {
-    status.style.color = "green";
-    status.textContent = "Relationship saved!";
-  } else {
-    status.style.color = "red";
-    status.textContent = "Error: " + (json?.message || "Failed to save");
-  }
-};
-</script>
+      const resultPanel = document.getElementById("resultPanel");
+      const contactInfo = document.getElementById("contactInfo");
+      const relationshipList = document.getElementById("relationshipList");
+
+      if (data.email === "N/A") {
+        resultPanel.classList.remove("hidden");
+        contactInfo.innerHTML = '<p class="not-found">Contact not found.</p>';
+        relationshipList.innerHTML = '<p>No relationships found.</p>';
+        return;
+      }
+
+      contactInfo.innerHTML = `
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Phone:</strong> ${data.phone}</p>
+      `;
+      if (data.relationships.length === 0) {
+        relationshipList.innerHTML = "<p>No relationships found.</p>";
+      } else {
+        relationshipList.innerHTML = data.relationships.map(r =>
+          `<div class="relationship"><strong>${r.relationship_type}</strong> – ${r.related_to_name} (${r.relationship_role}) [ID: ${r.related_to_id}]</div>`
+        ).join("");
+      }
+
+      resultPanel.classList.remove("hidden");
+    }
+
+    function showAddForm() {
+      document.getElementById("addForm").classList.remove("hidden");
+      document.getElementById("relationshipFields").classList.add("hidden");
+      document.getElementById("relatedNotFound").classList.add("hidden");
+    }
+
+    async function lookupRelatedContact() {
+      const email = document.getElementById("relEmail").value.trim();
+      const first = document.getElementById("relFirstName").value.trim();
+      const last = document.getElementById("relLastName").value.trim();
+      const query = email
+        ? `email=${encodeURIComponent(email)}`
+        : `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+
+      const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev/?${query}`);
+      const data = await res.json();
+
+      if (data.email === "N/A") {
+        document.getElementById("relatedNotFound").classList.remove("hidden");
+        document.getElementById("relationshipFields").classList.add("hidden");
+      } else {
+        document.getElementById("relatedNotFound").classList.add("hidden");
+        document.getElementById("relationshipFields").classList.remove("hidden");
+      }
+
+      // Store related ID somewhere if needed for the POST
+    }
+
+    function saveRelationship() {
+      alert("Save relationship logic goes here.");
+    }
+  </script>
+</body>
+</html>
