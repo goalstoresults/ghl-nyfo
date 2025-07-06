@@ -51,9 +51,10 @@
       background: #eef;
       border-radius: 6px;
     }
-    .divider {
+    hr {
       margin: 1rem 0;
-      border-top: 1px solid #999;
+      border: none;
+      border-top: 1px solid #ccc;
     }
   </style>
 </head>
@@ -86,37 +87,33 @@
       try {
         const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev?first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`);
         const data = await res.json();
+        console.log("API Response:", data);
 
         if (data.error) {
-          resultsDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+          resultsDiv.innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+        } else if (data.message) {
+          resultsDiv.innerHTML = `<p>${data.message}</p>`;
         } else {
-          if (data.email || data.phone) {
-            resultsDiv.innerHTML += `
-              <div>
-                <strong>Email:</strong> ${data.email || 'N/A'}<br/>
-                <strong>Phone:</strong> ${data.phone || 'N/A'}
-              </div>
-            `;
+          let html = `
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Phone:</strong> ${data.phone}</p>
+            <hr/>
+          `;
+
+          if (data.relationships && data.relationships.length > 0) {
+            html += data.relationships.map(rel => `
+              <p><strong>${rel.relationship_type}</strong> - ${rel.related_to_name} (${rel.relationship_role})</p>
+            `).join('');
           } else {
-            resultsDiv.innerHTML += `<p><strong>Contact not found.</strong></p>`;
+            html += `<p>No relationships found.</p>`;
           }
 
-          if (Array.isArray(data.relationships) && data.relationships.length > 0) {
-            resultsDiv.innerHTML += `<div class="divider"></div>`;
-            data.relationships.forEach(rel => {
-              resultsDiv.innerHTML += `
-                <div>
-                  <strong>${rel.relationship_type?.value || 'N/A'}</strong> - ${rel.related_to_name || 'Unknown'} (${rel.relationship_role?.value || 'N/A'})
-                </div>
-              `;
-            });
-          } else {
-            resultsDiv.innerHTML += `<div class="divider"></div><p>No relationships found.</p>`;
-          }
+          resultsDiv.innerHTML = html;
         }
 
         resultsDiv.style.display = 'block';
       } catch (err) {
+        console.error("Frontend error:", err);
         resultsDiv.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
         resultsDiv.style.display = 'block';
       }
