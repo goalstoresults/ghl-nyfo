@@ -3,132 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Search Contact Relationships</title>
+  <title>NYFO Contact Search</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f5f5f5;
+      background: #f5f5f5;
+      margin: 0;
       padding: 2rem;
-      display: flex;
-      justify-content: center;
     }
     .container {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 2rem;
-      width: 100%;
       max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     h2 {
-      margin-bottom: 1rem;
+      margin-top: 0;
     }
     label {
       display: block;
       margin-top: 1rem;
-      font-weight: bold;
     }
-    input {
+    input[type="text"] {
       width: 100%;
       padding: 0.5rem;
       margin-top: 0.25rem;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 6px;
     }
     button {
       margin-top: 1.5rem;
       padding: 0.75rem 1.5rem;
-      background-color: #007bff;
-      color: #fff;
+      background: #0077cc;
+      color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
+    }
+    button:hover {
+      background: #005fa3;
     }
     .result {
       margin-top: 2rem;
       padding: 1rem;
-      background-color: #efefff;
+      background: #eef;
       border-radius: 6px;
     }
-    .error {
-      color: red;
-      margin-top: 1rem;
+    .section-title {
+      margin-top: 1.5rem;
+      font-weight: bold;
     }
-    ul {
-      padding-left: 1rem;
+    hr {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 1rem 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Search Contact Relationships</h2>
-    <label>Email (preferred)</label>
-    <input type="email" id="email" placeholder="example@example.com"/>
-    <label>First Name</label>
-    <input type="text" id="first_name" placeholder="Optional if email used"/>
-    <label>Last Name</label>
-    <input type="text" id="last_name" placeholder="Optional if email used"/>
-    <button onclick="search()">Search</button>
+    <form id="search-form">
+      <label for="first-name">First Name</label>
+      <input type="text" id="first-name" name="first-name" />
 
-    <div class="result" id="result" style="display:none;"></div>
-    <div class="error" id="error" style="display:none;"></div>
+      <label for="last-name">Last Name</label>
+      <input type="text" id="last-name" name="last-name" />
+
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" />
+
+      <button type="submit">Search</button>
+    </form>
+
+    <div id="results" class="result" style="display: none;"></div>
   </div>
 
   <script>
-    async function search() {
-      const email = document.getElementById("email").value.trim();
-      const firstName = document.getElementById("first_name").value.trim();
-      const lastName = document.getElementById("last_name").value.trim();
-      const resultDiv = document.getElementById("result");
-      const errorDiv = document.getElementById("error");
+    document.getElementById('search-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-      resultDiv.style.display = "none";
-      errorDiv.style.display = "none";
+      const firstName = document.getElementById('first-name').value.trim();
+      const lastName = document.getElementById('last-name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const resultsDiv = document.getElementById('results');
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      resultsDiv.style.display = 'none';
+      resultsDiv.innerHTML = '';
+
+      let queryParams = '';
       if (email) {
-        url += `email=${encodeURIComponent(email)}`;
+        queryParams = `email=${encodeURIComponent(email)}`;
       } else if (firstName && lastName) {
-        url += `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
+        queryParams = `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
       } else {
-        errorDiv.textContent = "Please enter email or both first and last name.";
-        errorDiv.style.display = "block";
+        resultsDiv.innerHTML = `<p style="color:red;">Please enter either email or first + last name.</p>`;
+        resultsDiv.style.display = 'block';
         return;
       }
 
-      console.log("Fetching from:", url);
-
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Fetch failed");
-
+        const res = await fetch(`https://ghl-nyfo-api.dennis-e64.workers.dev/?${queryParams}`);
         const data = await res.json();
-        console.log("Response Data:", data);
+        console.log('DEBUG:', data.debug); // Debug output
 
-        const emailVal = data.email || "N/A";
-        const phoneVal = data.phone || "N/A";
+        let html = '';
 
-        let html = `<p><strong>Email:</strong> ${emailVal}</p>`;
-        html += `<p><strong>Phone:</strong> ${phoneVal}</p>`;
-
-        if (data.relationships && data.relationships.length > 0) {
-          html += "<ul>";
-          data.relationships.forEach(r => {
-            html += `<li><strong>${r.relationship_type}</strong> - ${r.related_to_name} (${r.relationship_role})</li>`;
-          });
-          html += "</ul>";
+        // Contact info section
+        if (data.email && data.email !== 'N/A') {
+          html += `<div class="section-title">Contact Info</div>`;
+          html += `<p><strong>Email:</strong> ${data.email}<br/><strong>Phone:</strong> ${data.phone || 'N/A'}</p>`;
+          html += '<hr/>';
         } else {
-          html += "<p>No relationships found.</p>";
+          html += `<p style="color:red;">Contact not found.</p>`;
         }
 
-        resultDiv.innerHTML = html;
-        resultDiv.style.display = "block";
+        // Relationship section
+        if (Array.isArray(data.relationships) && data.relationships.length > 0) {
+          html += `<div class="section-title">Relationships</div>`;
+          data.relationships.forEach((rel) => {
+            html += `<div>
+              <strong>${rel.relationship_type || 'N/A'}</strong> – ${rel.related_to_name || 'Unknown'}
+              (${rel.relationship_role || 'N/A'})
+            </div>`;
+          });
+        } else {
+          html += `<p>No relationships found.</p>`;
+        }
+
+        resultsDiv.innerHTML = html;
+        resultsDiv.style.display = 'block';
       } catch (err) {
-        console.error("Error fetching:", err);
-        errorDiv.textContent = "Error: Failed to fetch";
-        errorDiv.style.display = "block";
+        resultsDiv.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+        resultsDiv.style.display = 'block';
       }
-    }
+    });
   </script>
 </body>
 </html>
