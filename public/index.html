@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Search Contact Relationships</title>
+  <title>Search Contact Relationships 2</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -69,6 +69,10 @@
       background: #f8f9ff;
       border-radius: 6px;
     }
+    #saveStatus {
+      margin-top: 10px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -121,6 +125,7 @@
           </select>
         </div>
         <button onclick="saveRelationship()">Save Relationship</button>
+        <div id="saveStatus"></div>
       </div>
     </div>
   </div>
@@ -156,7 +161,7 @@
       if (data.relationships.length > 0) {
         html += `<table><thead><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr></thead><tbody>`;
         data.relationships.forEach(r => {
-          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td><td>${r.relationship_type?.value || 'N/A'}</td><td>${r.relationship_role?.value || 'N/A'}</td></tr>`;
+          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td><td>${r.relationship_type?.value || r.relationship_type || 'N/A'}</td><td>${r.relationship_role?.value || r.relationship_role || 'N/A'}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else {
@@ -205,9 +210,11 @@
     async function saveRelationship() {
       const type = document.getElementById('relationshipType').value;
       const role = document.getElementById('relationshipRole').value;
+      const statusDiv = document.getElementById('saveStatus');
+      statusDiv.innerText = ''; // clear previous
 
       if (!currentContactId || !relatedContactId || !type || !role) {
-        alert('Missing required fields.');
+        statusDiv.innerText = 'Missing required fields.';
         return;
       }
 
@@ -218,18 +225,22 @@
         relationship_role: role
       };
 
-      const res = await fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      try {
+        const res = await fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      const data = await res.json();
-      if (res.ok) {
-        alert('Relationship saved!');
-        location.reload();
-      } else {
-        alert('Error: ' + data.error);
+        const data = await res.json();
+
+        if (res.ok) {
+          statusDiv.innerText = 'Relationship saved successfully. Refresh the page to see it below.';
+        } else {
+          statusDiv.innerText = 'Error: ' + (data.message || data.error);
+        }
+      } catch (err) {
+        statusDiv.innerText = 'Save failed: ' + err.message;
       }
     }
   </script>
