@@ -102,7 +102,7 @@
 <body>
 
   <div class="section">
-    <h2>Search Contact Relationships 2</h2>
+    <h2>Search Contact Relationships 1</h2>
     <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
     <div class="row">
       <div class="field-box">
@@ -178,30 +178,46 @@
         });
     }
 
-    function renderRelationships(relationships) {
-      console.log("Rendering relationships:", relationships);
+function renderRelationships(relationships) {
+  console.log("Rendering relationships:", relationships);
 
-      if (!Array.isArray(relationships) || relationships.length === 0) {
-        document.getElementById('relationshipList').innerHTML = '<div class="not-found">No relationships found.</div>';
-        return;
-      }
+  if (!Array.isArray(relationships) || relationships.length === 0) {
+    document.getElementById('relationshipList').innerHTML = '<div class="not-found">No relationships found.</div>';
+    return;
+  }
 
-      const html = relationships.map(r => {
-        const type = r.relationship_type?.value || (typeof r.relationship_type === 'string' ? r.relationship_type : "N/A");
-        const role = r.relationship_role?.value || (typeof r.relationship_role === 'string' ? r.relationship_role : "N/A");
+  let tableHTML = `
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+      <thead>
+        <tr>
+          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Source</th>
+          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Related</th>
+          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Type</th>
+          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Role</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
-        return `
-          <div class="relationship">
-            <strong>Source:</strong> ${r.source_name || "Unknown"}<br>
-            <strong>Related:</strong> ${r.related_name || "Unknown"}<br>
-            <strong>Type:</strong> ${type}<br>
-            <strong>Role:</strong> ${role}<br>
-          </div>
-        `;
-      }).join('');
+  relationships.forEach(r => {
+    const type = r.relationship_type?.value || (typeof r.relationship_type === 'string' ? r.relationship_type : "N/A");
+    const role = r.relationship_role?.value || (typeof r.relationship_role === 'string' ? r.relationship_role : "N/A");
 
-      document.getElementById('relationshipList').innerHTML = html;
-    }
+    tableHTML += `
+      <tr>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${r.source_name || "Unknown"}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${r.related_name || "Unknown"}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${type}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #eee;">${role}</td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `</tbody></table>`;
+
+  document.getElementById('relationshipList').innerHTML = tableHTML;
+}
+
 
     function showAddRelationship() {
       document.getElementById('addRelationshipSection').style.display = 'block';
