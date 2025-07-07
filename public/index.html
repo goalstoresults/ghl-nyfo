@@ -7,48 +7,49 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f8;
-      margin: 0;
+      background: #f4f4f4;
       padding: 20px;
     }
     .container {
-      max-width: 900px;
-      margin: auto;
-    }
-    .box {
+      max-width: 960px;
+      margin: 0 auto;
       background: white;
+      padding: 30px;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 24px;
-      margin-bottom: 24px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     h2 {
       margin-top: 0;
     }
-    .input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
     input, select {
       padding: 8px;
-      font-size: 16px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    .input-row input, .input-row select {
       flex: 1;
     }
+    .or-divider {
+      text-align: center;
+      margin: 10px 0;
+      font-weight: bold;
+    }
     button {
-      background-color: #0057ff;
+      background: #005eff;
       color: white;
-      padding: 10px 18px;
+      padding: 10px 16px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
       margin-top: 10px;
     }
-    .or-separator {
-      text-align: center;
-      margin: 10px 0;
-      font-weight: bold;
-      color: #555;
+    button:hover {
+      background: #0045c4;
     }
     table {
       width: 100%;
@@ -57,208 +58,178 @@
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 8px 12px;
-      text-align: left;
+      padding: 8px;
     }
     th {
-      background-color: #f0f0f0;
+      background: #f0f0f0;
     }
-    .hidden {
-      display: none;
+    .section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9ff;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="box">
-      <h2>Search Contact Relationships 1 </h2>
-      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
-      <div class="input-group">
-        <input type="text" id="firstName" placeholder="First Name" />
-        <input type="text" id="lastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="email" placeholder="Email" />
-      </div>
-      <button onclick="handleSearch()">Search</button>
-    </div>
+    <h2>Search Contact Relationships</h2>
 
-    <div id="resultBox" class="box hidden">
-      <div id="contactInfo"></div>
-      <div id="relationshipResults"></div>
+    <div class="input-row">
+      <input type="text" id="firstName" placeholder="First Name" />
+      <input type="text" id="lastName" placeholder="Last Name" />
+    </div>
+    <div class="or-divider">— OR —</div>
+    <input type="text" id="email" placeholder="Email" />
+
+    <button onclick="searchContact()">Search</button>
+
+    <div id="results" class="section" style="display: none;"></div>
+
+    <div id="addRelationshipContainer" style="display: none;" class="section">
       <button onclick="showAddRelationshipForm()">Add Relationship</button>
     </div>
 
-    <div id="addBox" class="box hidden">
+    <div id="addRelationshipForm" class="section" style="display: none;">
       <h3>Search Related Contact</h3>
-      <div class="input-group">
-        <input type="text" id="relatedFirst" placeholder="First Name" />
-        <input type="text" id="relatedLast" placeholder="Last Name" />
+
+      <div class="input-row">
+        <input type="text" id="relatedFirstName" placeholder="First Name" />
+        <input type="text" id="relatedLastName" placeholder="Last Name" />
       </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="relatedEmail" placeholder="Email" />
+      <div class="or-divider">— OR —</div>
+      <input type="text" id="relatedEmail" placeholder="Email" />
+
+      <button onclick="searchRelatedContact()">Search Related Contact</button>
+
+      <div id="relatedContactDisplay" style="margin-top:10px;"></div>
+
+      <div id="relationshipFields" style="display:none;">
+        <div class="input-row">
+          <select id="relationshipType">
+            <option value="">Select type</option>
+            <option value="Client- Vendor">Client- Vendor</option>
+            <option value="Business Partner">Business Partner</option>
+            <option value="Employee">Employee</option>
+          </select>
+
+          <select id="relationshipRole">
+            <option value="">Select role</option>
+            <option value="Accountant">Accountant</option>
+            <option value="Attorney">Attorney</option>
+            <option value="Bookkeeper">Bookkeeper</option>
+          </select>
+        </div>
+        <button onclick="saveRelationship()">Save Relationship</button>
       </div>
-      <button onclick="searchRelated()">Search Related Contact</button>
-      <div id="relatedResult"></div>
     </div>
   </div>
 
   <script>
-    let currentContact = null;
-    let relatedContact = null;
+    let currentContactId = null;
+    let relatedContactId = null;
 
-    async function handleSearch() {
-      const first = document.getElementById("firstName").value.trim();
-      const last = document.getElementById("lastName").value.trim();
-      const email = document.getElementById("email").value.trim();
-
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+    async function searchContact() {
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      let url = 'https://ghl-nyfo-api.dennis-e64.workers.dev/?';
 
       if (email) {
-        url += "email=" + encodeURIComponent(email);
+        url += `email=${encodeURIComponent(email)}`;
       } else if (first && last) {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+        url += `first_name=${encodeURIComponent(first)}&last_name=${encodeURIComponent(last)}`;
       } else {
-        alert("Enter email or first + last name");
+        alert('Please enter either email or first and last name.');
         return;
       }
 
       const res = await fetch(url);
       const data = await res.json();
 
-      const info = document.getElementById("contactInfo");
-      const rels = document.getElementById("relationshipResults");
-      const resultBox = document.getElementById("resultBox");
-      const addBox = document.getElementById("addBox");
-      info.innerHTML = '';
-      rels.innerHTML = '';
-      resultBox.classList.add("hidden");
-      addBox.classList.add("hidden");
+      currentContactId = data.debug?.matchingContactId;
+      const contactName = `${data.debug?.contactMatch["First Name"]} ${data.debug?.contactMatch["Last Name"]}`;
+      const { email: contactEmail, phone } = data;
 
-      if (data?.email === "N/A") {
-        info.innerHTML = "<p><strong>Contact not found</strong></p>";
-        resultBox.classList.remove("hidden");
-        return;
-      }
-
-      currentContact = data?.debug?.contactMatch;
-      const fullName = `${currentContact["First Name"] || ""} ${currentContact["Last Name"] || ""}`.trim();
-      info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
-                        <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
-                        <strong>Phone:</strong> ${data.phone}</p>`;
+      let html = `<strong>Name:</strong> ${contactName} &nbsp;&nbsp; <strong>Email:</strong> ${contactEmail} &nbsp;&nbsp; <strong>Phone:</strong> ${phone}`;
 
       if (data.relationships.length > 0) {
-        let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
+        html += `<table><thead><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr></thead><tbody>`;
         data.relationships.forEach(r => {
-          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td>
-                      <td>${r.relationship_type?.value || "N/A"}</td>
-                      <td>${r.relationship_role?.value || "N/A"}</td></tr>`;
+          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td><td>${r.relationship_type?.value || 'N/A'}</td><td>${r.relationship_role?.value || 'N/A'}</td></tr>`;
         });
-        html += "</table>";
-        rels.innerHTML = html;
+        html += `</tbody></table>`;
       } else {
-        rels.innerHTML = "<p><em>No relationships found.</em></p>";
+        html += `<p>No relationships found.</p>`;
       }
 
-      resultBox.classList.remove("hidden");
+      document.getElementById('results').innerHTML = html;
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('addRelationshipContainer').style.display = 'block';
     }
 
     function showAddRelationshipForm() {
-      document.getElementById("addBox").classList.remove("hidden");
-      document.getElementById("relatedResult").innerHTML = '';
-      relatedContact = null;
+      document.getElementById('addRelationshipForm').style.display = 'block';
     }
 
-    async function searchRelated() {
-      const first = document.getElementById("relatedFirst").value.trim();
-      const last = document.getElementById("relatedLast").value.trim();
-      const email = document.getElementById("relatedEmail").value.trim();
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+    async function searchRelatedContact() {
+      const first = document.getElementById('relatedFirstName').value.trim();
+      const last = document.getElementById('relatedLastName').value.trim();
+      const email = document.getElementById('relatedEmail').value.trim();
+      let url = 'https://ghl-nyfo-api.dennis-e64.workers.dev/?';
 
       if (email) {
-        url += "email=" + encodeURIComponent(email);
+        url += `email=${encodeURIComponent(email)}`;
       } else if (first && last) {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+        url += `first_name=${encodeURIComponent(first)}&last_name=${encodeURIComponent(last)}`;
       } else {
-        alert("Enter related contact's email or first + last name");
+        alert('Please enter email or first and last name of related contact.');
         return;
       }
 
       const res = await fetch(url);
       const data = await res.json();
-      const result = document.getElementById("relatedResult");
-      result.innerHTML = '';
 
-      if (data?.email === "N/A") {
-        result.innerHTML = "<p><strong>Related contact not found</strong></p>";
-        return;
+      if (data.debug?.matchingContactId) {
+        relatedContactId = data.debug.matchingContactId;
+        const name = `${data.debug?.contactMatch["First Name"]} ${data.debug?.contactMatch["Last Name"]}`;
+        const email = data.email;
+        document.getElementById('relatedContactDisplay').innerHTML = `<strong>Related:</strong> ${name} (${email})`;
+        document.getElementById('relationshipFields').style.display = 'block';
+      } else {
+        alert('Related contact not found.');
+        document.getElementById('relationshipFields').style.display = 'none';
       }
-
-      relatedContact = data?.debug?.contactMatch;
-      const name = `${relatedContact["First Name"]} ${relatedContact["Last Name"]}`.trim();
-
-      result.innerHTML = `
-        <p><strong>Related:</strong> ${name} (${data.email})</p>
-<div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
-  <div style="flex: 1;">
-    <label for="relationshipType">Relationship Type:</label>
-    <select id="relationshipType" style="width: 100%; padding: 6px;">
-      <option value="">Select type</option>
-      <option value="Client- Vendor">Client- Vendor</option>
-      <option value="Partner">Partner</option>
-      <option value="Family">Family</option>
-      <option value="Advisor">Advisor</option>
-      <option value="Colleague">Colleague</option>
-    </select>
-  </div>
-
-  <div style="flex: 1;">
-    <label for="relationshipRole">Relationship Role:</label>
-    <select id="relationshipRole" style="width: 100%; padding: 6px;">
-      <option value="">Select role</option>
-      <option value="Accountant">Accountant</option>
-      <option value="Attorney">Attorney</option>
-      <option value="Spouse">Spouse</option>
-      <option value="Assistant">Assistant</option>
-      <option value="Manager">Manager</option>
-    </select>
-  </div>
-</div>
-
-
-
-        <button onclick="saveRelationship()">Save Relationship</button>
-      `;
     }
 
     async function saveRelationship() {
-      const type = document.getElementById("relationshipType").value.trim();
-      const role = document.getElementById("relationshipRole").value.trim();
+      const type = document.getElementById('relationshipType').value;
+      const role = document.getElementById('relationshipRole').value;
 
-      if (!type || !role) return alert("Type and Role are required.");
+      if (!currentContactId || !relatedContactId || !type || !role) {
+        alert('Missing required fields.');
+        return;
+      }
 
       const payload = {
-        source_contact_id: currentContact["Contact Id"],
-        related_contact_id: relatedContact["Contact Id"],
+        source_contact_id: currentContactId,
+        related_contact_id: relatedContactId,
         relationship_type: type,
         relationship_role: role
       };
 
-      const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      const result = await res.json();
-      if (result.success) {
-        alert("Relationship saved!");
-        document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // refresh
+      const data = await res.json();
+      if (res.ok) {
+        alert('Relationship saved!');
+        location.reload();
       } else {
-        alert("Save failed: " + (result.error || "Unknown error"));
+        alert('Error: ' + data.error);
       }
     }
   </script>
