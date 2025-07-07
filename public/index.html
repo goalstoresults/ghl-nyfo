@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>Search Contact Relationships 4 </h2>
+      <h2>Search Contact Relationships 2 </h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -201,12 +201,29 @@
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
-        <label>Relationship Type:
-          <input type="text" id="relationshipType" />
-        </label><br>
-        <label>Relationship Role:
-          <input type="text" id="relationshipRole" />
-        </label><br>
+<label>Relationship Type:
+  <select id="relationshipType">
+    <option value="">Select type</option>
+    <option value="Client- Vendor">Client- Vendor</option>
+    <option value="Partner">Partner</option>
+    <option value="Family">Family</option>
+    <option value="Advisor">Advisor</option>
+    <option value="Colleague">Colleague</option>
+    <!-- Add more as needed -->
+  </select>
+</label><br>
+<label>Relationship Role:
+  <select id="relationshipRole">
+    <option value="">Select role</option>
+    <option value="Accountant">Accountant</option>
+    <option value="Attorney">Attorney</option>
+    <option value="Spouse">Spouse</option>
+    <option value="Assistant">Assistant</option>
+    <option value="Manager">Manager</option>
+    <!-- Add more as needed -->
+  </select>
+</label><br>
+
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
     }
