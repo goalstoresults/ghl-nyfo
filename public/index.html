@@ -2,308 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NYFO Contact Relationship Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search Contact Relationships</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
+      background-color: #f8f9ff;
+      padding: 30px;
+    }
+
+    .container {
       max-width: 900px;
       margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
     }
 
-    h2 {
-      margin-top: 30px;
-    }
-
-    .section {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
-    }
-
-    .row {
+    .form-group {
       display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
+      gap: 10px;
       margin-bottom: 10px;
     }
 
-    .field-box {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+    input[type="text"] {
       padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
       flex: 1;
     }
 
-    .field-box input {
-      border: none;
-      outline: none;
-      width: 100%;
-      font-size: 16px;
-    }
-
-    .or-label {
-      align-self: center;
-      font-weight: bold;
-      margin: 0 10px;
-    }
-
-    .email-field input {
-      max-width: 100%;
-      overflow-wrap: break-word;
-      word-break: break-word;
-      white-space: normal;
-    }
-
-    button {
-      padding: 10px 16px;
-      font-size: 16px;
-      background-color: #1d4ed8;
+    .primary-btn {
+      background-color: #0d6efd;
       color: white;
       border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
       border-radius: 8px;
       cursor: pointer;
-      margin-top: 10px;
     }
 
-    .contact-info, .relationship {
-      margin-top: 10px;
+    .result-box {
+      background-color: #eef0ff;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 20px;
     }
 
-    .relationship {
-      border-top: 1px solid #ccc;
-      padding-top: 10px;
-    }
-
-    .not-found {
-      color: red;
-      font-weight: bold;
-    }
-
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-
-    input[type="text"] {
-      padding: 8px;
+    table {
       width: 100%;
-      border-radius: 6px;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
       border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #e5e8ff;
+    }
+
+    .or-divider {
+      text-align: center;
+      font-weight: bold;
+      margin: 5px 0;
+      color: #555;
     }
   </style>
 </head>
 <body>
-
-  <div class="section">
-    <h2>Search Contact Relationships 1</h2>
+  <div class="container">
+    <h2>Search Contact Relationships</h2>
     <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
-    <div class="row">
-      <div class="field-box">
-        <input type="text" id="firstName" placeholder="First Name">
-        <input type="text" id="lastName" placeholder="Last Name">
-      </div>
-      <div class="or-label">— OR —</div>
-      <div class="field-box email-field">
-        <input type="text" id="email" placeholder="Email">
-      </div>
+
+    <div class="form-group">
+      <input type="text" id="firstName" placeholder="First Name" />
+      <input type="text" id="lastName" placeholder="Last Name" />
     </div>
-    <button onclick="searchContact()">Search</button>
-    <div id="contactResult"></div>
-  </div>
+    <div class="or-divider">— OR —</div>
+    <div class="form-group">
+      <input type="text" id="email" placeholder="Email" />
+    </div>
+    <button id="searchBtn" class="primary-btn">Search</button>
 
-  <div class="section">
-    <div id="relationshipList"></div>
-  </div>
+    <div id="resultBox" class="result-box" style="display: none;">
+      <div id="contactInfo"></div>
+      <div id="relationshipsTable"></div>
+    </div>
 
-  <div class="section">
-    <button onclick="showAddRelationship()">Add Relationship</button>
-    <div id="addRelationshipSection" style="display:none;">
-      <h2>Search Related Contact</h2>
-      <div class="row">
-        <div class="field-box">
-          <input type="text" id="relatedFirstName" placeholder="First Name">
-          <input type="text" id="relatedLastName" placeholder="Last Name">
-        </div>
-        <div class="or-label">OR</div>
-        <div class="field-box email-field">
-          <input type="text" id="relatedEmail" placeholder="Email">
-        </div>
-      </div>
-      <button onclick="searchRelatedContact()">Search Related Contact</button>
-      <div id="relatedContactResult"></div>
+    <div id="addRelationshipContainer" style="display: none; margin-top: 20px;">
+      <button id="addRelationshipBtn" class="primary-btn">Add Relationship</button>
     </div>
   </div>
 
   <script>
-    let currentContact = null;
-    let relatedContact = null;
+    const API_URL = "https://ghl-nyfo-api.dennis-e64.workers.dev/";
 
-    function searchContact() {
-      const firstName = document.getElementById('firstName').value.trim();
-      const lastName = document.getElementById('lastName').value.trim();
+    document.getElementById('searchBtn').addEventListener('click', handleSearch);
+
+    async function handleSearch() {
+      const first = document.getElementById('firstName').value.trim();
+      const last = document.getElementById('lastName').value.trim();
       const email = document.getElementById('email').value.trim();
 
-      let url = 'https://ghl-nyfo-api.dennis-e64.workers.dev/?';
+      let url = API_URL;
       if (email) {
-        url += `email=${encodeURIComponent(email)}`;
+        url += `?email=${encodeURIComponent(email)}`;
+      } else if (first && last) {
+        url += `?first_name=${encodeURIComponent(first)}&last_name=${encodeURIComponent(last)}`;
       } else {
-        url += `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
-      }
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          console.log("Search Contact Response:", data);
-          if (data.email && data.email !== "N/A") {
-            currentContact = data;
-            document.getElementById('contactResult').innerHTML = `
-              <div class="contact-info">
-                <strong>Email:</strong> ${data.email}<br>
-                <strong>Phone:</strong> ${data.phone}
-              </div>
-            `;
-            renderRelationships(data.relationships);
-          } else {
-            currentContact = null;
-            document.getElementById('contactResult').innerHTML = '<div class="not-found">Contact not found</div>';
-            document.getElementById('relationshipList').innerHTML = '';
-          }
-        });
-    }
-
-function renderRelationships(relationships) {
-  console.log("Rendering relationships:", relationships);
-
-  if (!Array.isArray(relationships) || relationships.length === 0) {
-    document.getElementById('relationshipList').innerHTML = '<div class="not-found">No relationships found.</div>';
-    return;
-  }
-
-  let tableHTML = `
-    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-      <thead>
-        <tr>
-          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Source</th>
-          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Related</th>
-          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Type</th>
-          <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Role</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  relationships.forEach(r => {
-    const type = r.relationship_type?.value || (typeof r.relationship_type === 'string' ? r.relationship_type : "N/A");
-    const role = r.relationship_role?.value || (typeof r.relationship_role === 'string' ? r.relationship_role : "N/A");
-
-    tableHTML += `
-      <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${r.source_name || "Unknown"}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${r.related_name || "Unknown"}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${type}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #eee;">${role}</td>
-      </tr>
-    `;
-  });
-
-  tableHTML += `</tbody></table>`;
-
-  document.getElementById('relationshipList').innerHTML = tableHTML;
-}
-
-
-    function showAddRelationship() {
-      document.getElementById('addRelationshipSection').style.display = 'block';
-      document.getElementById('relatedContactResult').innerHTML = '';
-      relatedContact = null;
-    }
-
-    function searchRelatedContact() {
-      const firstName = document.getElementById('relatedFirstName').value.trim();
-      const lastName = document.getElementById('relatedLastName').value.trim();
-      const email = document.getElementById('relatedEmail').value.trim();
-
-      let url = 'https://ghl-nyfo-api.dennis-e64.workers.dev/?';
-      if (email) {
-        url += `email=${encodeURIComponent(email)}`;
-      } else {
-        url += `first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`;
-      }
-
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          console.log("Search Related Contact Response:", data);
-          if (data.email && data.email !== "N/A") {
-            relatedContact = data;
-            document.getElementById('relatedContactResult').innerHTML = `
-              <div class="contact-info">
-                <strong>Email:</strong> ${data.email}<br>
-                <strong>Phone:</strong> ${data.phone}<br>
-                <label>Relationship Type:
-                  <input type="text" id="relationshipType">
-                </label>
-                <label>Relationship Role:
-                  <input type="text" id="relationshipRole">
-                </label>
-                <button onclick="saveRelationship()">Save Relationship</button>
-              </div>
-            `;
-          } else {
-            relatedContact = null;
-            document.getElementById('relatedContactResult').innerHTML = '<div class="not-found">Related contact not found</div>';
-          }
-        });
-    }
-
-    function saveRelationship() {
-      if (!currentContact || !relatedContact) return alert("Missing contacts");
-
-      const relationshipType = document.getElementById('relationshipType').value.trim();
-      const relationshipRole = document.getElementById('relationshipRole').value.trim();
-
-      if (!relationshipType || !relationshipRole) {
-        alert("Please enter both type and role");
+        alert("Please enter either both first and last name, or email.");
         return;
       }
 
-      fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source_contact_id: currentContact.debug.matchingContactId,
-          related_contact_id: relatedContact.debug.matchingContactId,
-          relationship_type: relationshipType,
-          relationship_role: relationshipRole
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log("Save Relationship Response:", data);
-        if (data.success) {
-          alert("Relationship saved!");
-          searchContact();
-          document.getElementById('relatedFirstName').value = '';
-          document.getElementById('relatedLastName').value = '';
-          document.getElementById('relatedEmail').value = '';
-          document.getElementById('relatedContactResult').innerHTML = '';
-          document.getElementById('addRelationshipSection').style.display = 'none';
-          relatedContact = null;
-        } else {
-          alert("Failed to save: " + (data.error || 'Unknown error'));
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data.email || data.email === "N/A") {
+          document.getElementById('resultBox').style.display = "block";
+          document.getElementById('contactInfo').innerHTML = "<strong>Contact not found.</strong>";
+          document.getElementById('relationshipsTable').innerHTML = "";
+          document.getElementById('addRelationshipContainer').style.display = "none";
+          return;
         }
-      })
-      .catch(err => {
-        console.error("Save Error:", err);
-        alert("Error saving relationship");
+
+        // Show contact info
+        document.getElementById('resultBox').style.display = "block";
+        document.getElementById('contactInfo').innerHTML = `
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Phone:</strong> ${data.phone}</p>
+        `;
+
+        // Show relationships table
+        renderRelationships(data.relationships);
+
+        // Show Add Relationship button
+        document.getElementById('addRelationshipContainer').style.display = "block";
+
+      } catch (error) {
+        console.error("Fetch error:", error);
+        alert("There was an error retrieving the contact.");
+      }
+    }
+
+    function renderRelationships(relationships) {
+      if (!relationships || relationships.length === 0) {
+        document.getElementById('relationshipsTable').innerHTML = "<p><em>No relationships found.</em></p>";
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Source Name</th>
+              <th>Related Name</th>
+              <th>Relationship Type</th>
+              <th>Relationship Role</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      relationships.forEach(rel => {
+        html += `
+          <tr>
+            <td>${rel.source_name}</td>
+            <td>${rel.related_name}</td>
+            <td>${rel.relationship_type?.value || 'N/A'}</td>
+            <td>${rel.relationship_role?.value || 'N/A'}</td>
+          </tr>
+        `;
       });
+
+      html += `</tbody></table>`;
+      document.getElementById('relationshipsTable').innerHTML = html;
     }
   </script>
 </body>
