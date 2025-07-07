@@ -69,15 +69,24 @@
       background: #f8f9ff;
       border-radius: 6px;
     }
-    #saveStatus {
+    .message {
       margin-top: 10px;
-      font-weight: bold;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Search Contact Relationships 2</h2>
+    <h2>Search Contact Relationships</h2>
 
     <div class="input-row">
       <input type="text" id="firstName" placeholder="First Name" />
@@ -125,7 +134,7 @@
           </select>
         </div>
         <button onclick="saveRelationship()">Save Relationship</button>
-        <div id="saveStatus"></div>
+        <div id="saveMessage"></div>
       </div>
     </div>
   </div>
@@ -210,11 +219,14 @@
     async function saveRelationship() {
       const type = document.getElementById('relationshipType').value;
       const role = document.getElementById('relationshipRole').value;
-      const statusDiv = document.getElementById('saveStatus');
-      statusDiv.innerText = ''; // clear previous
+
+      const messageBox = document.getElementById('saveMessage');
+      messageBox.innerHTML = '';
+      messageBox.className = 'message';
 
       if (!currentContactId || !relatedContactId || !type || !role) {
-        statusDiv.innerText = 'Missing required fields.';
+        messageBox.textContent = 'Missing required fields.';
+        messageBox.classList.add('error');
         return;
       }
 
@@ -225,22 +237,20 @@
         relationship_role: role
       };
 
-      try {
-        const res = await fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+      const res = await fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        const data = await res.json();
-
-        if (res.ok) {
-          statusDiv.innerText = 'Relationship saved successfully. Refresh the page to see it below.';
-        } else {
-          statusDiv.innerText = 'Error: ' + (data.message || data.error);
-        }
-      } catch (err) {
-        statusDiv.innerText = 'Save failed: ' + err.message;
+      const data = await res.json();
+      if (res.ok) {
+        messageBox.textContent = 'Relationship saved successfully. Refresh the page to see it below.';
+        messageBox.classList.add('success');
+      } else {
+        messageBox.textContent = 'Error: ' + (data.message || data.error);
+        messageBox.classList.add('error');
+        console.log('DEBUG:', data.debug || data);
       }
     }
   </script>
