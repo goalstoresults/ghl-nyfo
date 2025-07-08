@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>Search Contact Relationships 2</h2>
+      <h2>Search Contact Relationships</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -114,14 +114,11 @@
       const last = document.getElementById("lastName").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      const base = "https://ghl-nyfo.pages.dev/functions/search-contact";
-      const url = new URL(base);
-
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
       if (email) {
-        url.searchParams.set("email", email);
+        url += "email=" + encodeURIComponent(email);
       } else if (first && last) {
-        url.searchParams.set("first", first);
-        url.searchParams.set("last", last);
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       } else {
         alert("Enter email or first + last name");
         return;
@@ -155,8 +152,8 @@
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
         data.relationships.forEach(r => {
           html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td>
-                      <td>${r.relationship_type?.value || "N/A"}</td>
-                      <td>${r.relationship_role?.value || "N/A"}</td></tr>`;
+                      <td>${r.relationship_type || "N/A"}</td>
+                      <td>${r.relationship_role || "N/A"}</td></tr>`;
         });
         html += "</table>";
         rels.innerHTML = html;
@@ -177,15 +174,12 @@
       const first = document.getElementById("relatedFirst").value.trim();
       const last = document.getElementById("relatedLast").value.trim();
       const email = document.getElementById("relatedEmail").value.trim();
-
-      const base = "https://ghl-nyfo.pages.dev/functions/search-contact";
-      const url = new URL(base);
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
 
       if (email) {
-        url.searchParams.set("email", email);
+        url += "email=" + encodeURIComponent(email);
       } else if (first && last) {
-        url.searchParams.set("first", first);
-        url.searchParams.set("last", last);
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       } else {
         alert("Enter related contact's email or first + last name");
         return;
@@ -206,31 +200,33 @@
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
-        <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
-          <div style="flex: 1;">
-            <label for="relationshipType">Relationship Type:</label>
-            <select id="relationshipType" style="width: 100%; padding: 6px;">
-              <option value="">Select type</option>
-              <option value="Client- Vendor">Client- Vendor</option>
-              <option value="Partner">Partner</option>
-              <option value="Family">Family</option>
-              <option value="Advisor">Advisor</option>
-              <option value="Colleague">Colleague</option>
-            </select>
-          </div>
+<div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
+  <div style="flex: 1;">
+    <label for="relationshipType">Relationship Type:</label>
+    <select id="relationshipType" style="width: 100%; padding: 6px;">
+      <option value="">Select type</option>
+      <option value="Client- Vendor">Client- Vendor</option>
+      <option value="Partner">Partner</option>
+      <option value="Family">Family</option>
+      <option value="Advisor">Advisor</option>
+      <option value="Colleague">Colleague</option>
+      <option value="Mother">Mother</option>
+    </select>
+  </div>
 
-          <div style="flex: 1;">
-            <label for="relationshipRole">Relationship Role:</label>
-            <select id="relationshipRole" style="width: 100%; padding: 6px;">
-              <option value="">Select role</option>
-              <option value="Accountant">Accountant</option>
-              <option value="Attorney">Attorney</option>
-              <option value="Spouse">Spouse</option>
-              <option value="Assistant">Assistant</option>
-              <option value="Manager">Manager</option>
-            </select>
-          </div>
-        </div>
+  <div style="flex: 1;">
+    <label for="relationshipRole">Relationship Role:</label>
+    <select id="relationshipRole" style="width: 100%; padding: 6px;">
+      <option value="">Select role</option>
+      <option value="Accountant">Accountant</option>
+      <option value="Attorney">Attorney</option>
+      <option value="Spouse">Spouse</option>
+      <option value="Assistant">Assistant</option>
+      <option value="Manager">Manager</option>
+      <option value="Guardian">Guardian</option>
+    </select>
+  </div>
+</div>
 
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
