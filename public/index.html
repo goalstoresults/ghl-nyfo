@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Search Contact Relationships</title>
+  <title>NYFO Contact Relationships</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -66,21 +66,12 @@
     .hidden {
       display: none;
     }
-    .debug-box {
-      font-size: 12px;
-      color: #444;
-      margin-top: 20px;
-      background: #f0f0f0;
-      padding: 10px;
-      border-radius: 4px;
-      white-space: pre-wrap;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Search Contact Relationships </h2>
+      <h2>NYFO Search Contact Relationships</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -112,8 +103,6 @@
       <button onclick="searchRelated()">Search Related Contact</button>
       <div id="relatedResult"></div>
     </div>
-
-    <div id="debugBox" class="debug-box hidden"></div>
   </div>
 
   <script>
@@ -137,18 +126,16 @@
 
       const res = await fetch(url);
       const data = await res.json();
+      console.log("Debug response:", data?.debug);
 
       const info = document.getElementById("contactInfo");
       const rels = document.getElementById("relationshipResults");
-      const debugBox = document.getElementById("debugBox");
       const resultBox = document.getElementById("resultBox");
       const addBox = document.getElementById("addBox");
       info.innerHTML = '';
       rels.innerHTML = '';
       resultBox.classList.add("hidden");
       addBox.classList.add("hidden");
-      debugBox.classList.remove("hidden");
-      debugBox.textContent = JSON.stringify(data.debug, null, 2);
 
       if (data?.email === "N/A") {
         info.innerHTML = "<p><strong>Contact not found</strong></p>";
@@ -201,6 +188,8 @@
 
       const res = await fetch(url);
       const data = await res.json();
+      console.log("Related contact debug:", data?.debug);
+
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
