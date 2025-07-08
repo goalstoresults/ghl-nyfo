@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Relationship Search</title>
+  <title>NYFO Contact Relationships</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search</h2>
+      <h2>NYFO Contact Relationship Search 2</h2>
       <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -142,7 +142,14 @@
         return;
       }
 
-      const fullName = `${data.contact?.["First Name"] || ""} ${data.contact?.["Last Name"] || ""}`.trim() || "N/A";
+      // Use full name fallback logic
+      let fullName = "N/A";
+      if (data.contact?.["First Name"] || data.contact?.["Last Name"]) {
+        fullName = `${data.contact["First Name"] || ""} ${data.contact["Last Name"] || ""}`.trim();
+      } else if (data.email) {
+        fullName = data.email.split("@")[0].replace(/\./g, " ");
+      }
+
       currentContact = data.contact;
 
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
@@ -261,4 +268,3 @@
   </script>
 </body>
 </html>
-
