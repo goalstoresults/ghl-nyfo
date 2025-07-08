@@ -1,10 +1,9 @@
-<!-- NYFO index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Relationship Search 2</title>
+  <title>NYFO Contact Relationship Search</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -72,13 +71,8 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search </h2>
-      <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
-      <div class="input-group">
-        <input type="text" id="firstName" placeholder="First Name" />
-        <input type="text" id="lastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
+      <h2>NYFO Contact Relationship Search</h2>
+      <p>Search by <strong>Email</strong>.</p>
       <div class="input-group">
         <input type="text" id="email" placeholder="Email" />
       </div>
@@ -94,11 +88,6 @@
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
       <div class="input-group">
-        <input type="text" id="relatedFirst" placeholder="First Name" />
-        <input type="text" id="relatedLast" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
       <button onclick="searchRelated()">Search Related Contact</button>
@@ -111,21 +100,14 @@
     let relatedContact = null;
 
     async function handleSearch() {
-      const first = document.getElementById("firstName").value.trim();
-      const last = document.getElementById("lastName").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
-      if (email) {
-        url += "email=" + encodeURIComponent(email);
-      } else if (first && last) {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
-      } else {
-        alert("Enter email or first + last name");
+      if (!email) {
+        alert("Enter email");
         return;
       }
 
-      const res = await fetch(url);
+      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
       const data = await res.json();
 
       const info = document.getElementById("contactInfo");
@@ -143,8 +125,8 @@
         return;
       }
 
-      currentContact = data.contact || data.debug?.contactMatch || {};
-      const fullName = `${currentContact["First Name"] || ""} ${currentContact["Last Name"] || ""}`.trim() || (data.email.split("@")[0] || "N/A");
+      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+      currentContact = data;
 
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
@@ -169,6 +151,88 @@
       document.getElementById("addBox").classList.remove("hidden");
       document.getElementById("relatedResult").innerHTML = '';
       relatedContact = null;
+    }
+
+    async function searchRelated() {
+      const email = document.getElementById("relatedEmail").value.trim();
+
+      if (!email) {
+        alert("Enter related contact's email");
+        return;
+      }
+
+      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
+      const data = await res.json();
+      const result = document.getElementById("relatedResult");
+      result.innerHTML = '';
+
+      if (data?.email === "N/A") {
+        result.innerHTML = "<p><strong>Related contact not found</strong></p>";
+        return;
+      }
+
+      relatedContact = data;
+      const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+
+      result.innerHTML = `
+        <p><strong>Related:</strong> ${name} (${data.email})</p>
+        <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
+          <div style="flex: 1;">
+            <label for="relationshipType">Relationship Type:</label>
+            <select id="relationshipType" style="width: 100%; padding: 6px;">
+              <option value="">Select type</option>
+              <option value="Client- Vendor">Client- Vendor</option>
+              <option value="Partner">Partner</option>
+              <option value="Family">Family</option>
+              <option value="Advisor">Advisor</option>
+              <option value="Colleague">Colleague</option>
+              <option value="Mother">Mother</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label for="relationshipRole">Relationship Role:</label>
+            <select id="relationshipRole" style="width: 100%; padding: 6px;">
+              <option value="">Select role</option>
+              <option value="Accountant">Accountant</option>
+              <option value="Attorney">Attorney</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Assistant">Assistant</option>
+              <option value="Manager">Manager</option>
+              <option value="Guardian">Guardian</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="saveRelationship()">Save Relationship</button>
+      `;
+    }
+
+    async function saveRelationship() {
+      const type = document.getElementById("relationshipType").value.trim();
+      const role = document.getElementById("relationshipRole").value.trim();
+
+      if (!type || !role) return alert("Type and Role are required.");
+
+      const payload = {
+        source_contact_id: currentContact.contact_id || currentContact["Contact Id"],
+        related_contact_id: relatedContact.contact_id || relatedContact["Contact Id"],
+        relationship_type: type,
+        relationship_role: role
+      };
+
+      const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert("Relationship saved!");
+        document.getElementById("addBox").classList.add("hidden");
+        handleSearch(); // refresh
+      } else {
+        alert("Save failed: " + (result.error || "Unknown error"));
+      }
     }
   </script>
 </body>
