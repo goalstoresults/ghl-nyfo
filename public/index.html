@@ -72,7 +72,7 @@
   <div class="container">
     <div class="box">
       <h2>NYFO Contact Relationship Search</h2>
-<p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
         <input type="text" id="lastName" placeholder="Last Name" />
@@ -106,13 +106,21 @@
 
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
+      const first = document.getElementById("firstName").value.trim();
+      const last = document.getElementById("lastName").value.trim();
 
-      if (!email) {
-        alert("Enter email");
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+
+      if (email) {
+        url += "email=" + encodeURIComponent(email);
+      } else if (first && last) {
+        url += "first=" + encodeURIComponent(first) + "&last=" + encodeURIComponent(last);
+      } else {
+        alert("Please enter either an Email or both First and Last Name.");
         return;
       }
 
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
+      const res = await fetch(url);
       const data = await res.json();
 
       const info = document.getElementById("contactInfo");
@@ -242,3 +250,4 @@
   </script>
 </body>
 </html>
+
