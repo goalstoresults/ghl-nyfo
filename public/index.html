@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>Search Contact Relationships</h2>
+      <h2>Search Contact Relationships 2</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -114,8 +114,9 @@
       const last = document.getElementById("lastName").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      const base = "https://ghl-nyfo.pages.dev/search-contact";
+      const base = "https://ghl-nyfo.pages.dev/functions/search-contact";
       const url = new URL(base);
+
       if (email) {
         url.searchParams.set("email", email);
       } else if (first && last) {
@@ -154,8 +155,8 @@
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
         data.relationships.forEach(r => {
           html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td>
-                      <td>${r.relationship_type}</td>
-                      <td>${r.relationship_role}</td></tr>`;
+                      <td>${r.relationship_type?.value || "N/A"}</td>
+                      <td>${r.relationship_role?.value || "N/A"}</td></tr>`;
         });
         html += "</table>";
         rels.innerHTML = html;
@@ -177,8 +178,9 @@
       const last = document.getElementById("relatedLast").value.trim();
       const email = document.getElementById("relatedEmail").value.trim();
 
-      const base = "https://ghl-nyfo.pages.dev/search-contact";
+      const base = "https://ghl-nyfo.pages.dev/functions/search-contact";
       const url = new URL(base);
+
       if (email) {
         url.searchParams.set("email", email);
       } else if (first && last) {
