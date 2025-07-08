@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search</h2>
+      <h2>NYFO Contact Relationship Search Tool</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -88,16 +88,11 @@
       <div id="contactInfo"></div>
       <div id="relationshipResults"></div>
       <button onclick="showAddRelationshipForm()">Add Relationship</button>
+      <button onclick="resetSearch()">New Search</button>
     </div>
 
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
-      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
-      <div class="input-group">
-        <input type="text" id="relatedFirst" placeholder="First Name" />
-        <input type="text" id="relatedLast" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
       <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
@@ -115,14 +110,21 @@
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
 
+      if (email && (first || last)) {
+        alert("Please enter either email OR first + last name — not both.");
+        return;
+      }
+
+      if (!email && (!first || !last)) {
+        alert("Please provide either full name or an email.");
+        return;
+      }
+
       let query = "";
       if (email) {
         query = "?email=" + encodeURIComponent(email);
-      } else if (first && last) {
-        query = `?first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       } else {
-        alert("Please enter Email or both First and Last Name");
-        return;
+        query = `?first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       }
 
       const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/" + query);
@@ -167,26 +169,20 @@
 
     function showAddRelationshipForm() {
       document.getElementById("addBox").classList.remove("hidden");
+      document.getElementById("relatedEmail").value = "";
       document.getElementById("relatedResult").innerHTML = '';
       relatedContact = null;
     }
 
     async function searchRelated() {
       const email = document.getElementById("relatedEmail").value.trim();
-      const first = document.getElementById("relatedFirst").value.trim();
-      const last = document.getElementById("relatedLast").value.trim();
 
-      let query = "";
-      if (email) {
-        query = "?email=" + encodeURIComponent(email);
-      } else if (first && last) {
-        query = `?first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
-      } else {
-        alert("Enter Email or both First and Last Name for related contact");
+      if (!email) {
+        alert("Enter related contact's email");
         return;
       }
 
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/" + query);
+      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
       const data = await res.json();
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
@@ -235,10 +231,7 @@
       const type = document.getElementById("relationshipType").value.trim();
       const role = document.getElementById("relationshipRole").value.trim();
 
-      if (!type || !role) {
-        alert("Type and Role are required.");
-        return;
-      }
+      if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
         source_contact_id: currentContact.contact_id || currentContact["Contact Id"],
@@ -262,6 +255,24 @@
         alert("Save failed: " + (result.error || "Unknown error"));
       }
     }
+
+    function resetSearch() {
+      document.getElementById("firstName").value = "";
+      document.getElementById("lastName").value = "";
+      document.getElementById("email").value = "";
+
+      document.getElementById("contactInfo").innerHTML = "";
+      document.getElementById("relationshipResults").innerHTML = "";
+      document.getElementById("resultBox").classList.add("hidden");
+
+      document.getElementById("relatedEmail").value = "";
+      document.getElementById("relatedResult").innerHTML = "";
+      document.getElementById("addBox").classList.add("hidden");
+
+      currentContact = null;
+      relatedContact = null;
+    }
   </script>
 </body>
 </html>
+
