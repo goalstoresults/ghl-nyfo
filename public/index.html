@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>Search Contact Relationships</h2>
+      <h2>NYFO Search Contact Relationships</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -200,33 +200,33 @@
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
-<div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
-  <div style="flex: 1;">
-    <label for="relationshipType">Relationship Type:</label>
-    <select id="relationshipType" style="width: 100%; padding: 6px;">
-      <option value="">Select type</option>
-      <option value="Client- Vendor">Client- Vendor</option>
-      <option value="Partner">Partner</option>
-      <option value="Family">Family</option>
-      <option value="Advisor">Advisor</option>
-      <option value="Colleague">Colleague</option>
-      <option value="Mother">Mother</option>
-    </select>
-  </div>
+        <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
+          <div style="flex: 1;">
+            <label for="relationshipType">Relationship Type:</label>
+            <select id="relationshipType" style="width: 100%; padding: 6px;">
+              <option value="">Select type</option>
+              <option value="Client- Vendor">Client- Vendor</option>
+              <option value="Partner">Partner</option>
+              <option value="Family">Family</option>
+              <option value="Advisor">Advisor</option>
+              <option value="Colleague">Colleague</option>
+              <option value="Mother">Mother</option>
+            </select>
+          </div>
 
-  <div style="flex: 1;">
-    <label for="relationshipRole">Relationship Role:</label>
-    <select id="relationshipRole" style="width: 100%; padding: 6px;">
-      <option value="">Select role</option>
-      <option value="Accountant">Accountant</option>
-      <option value="Attorney">Attorney</option>
-      <option value="Spouse">Spouse</option>
-      <option value="Assistant">Assistant</option>
-      <option value="Manager">Manager</option>
-      <option value="Guardian">Guardian</option>
-    </select>
-  </div>
-</div>
+          <div style="flex: 1;">
+            <label for="relationshipRole">Relationship Role:</label>
+            <select id="relationshipRole" style="width: 100%; padding: 6px;">
+              <option value="">Select role</option>
+              <option value="Accountant">Accountant</option>
+              <option value="Attorney">Attorney</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Assistant">Assistant</option>
+              <option value="Manager">Manager</option>
+              <option value="Guardian">Guardian</option>
+            </select>
+          </div>
+        </div>
 
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
