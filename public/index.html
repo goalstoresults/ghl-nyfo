@@ -71,8 +71,8 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Search Contact Relationships</h2>
-      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+      <h2>NYFO Contact Relationship Search 44</h2>
+      <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
         <input type="text" id="lastName" placeholder="Last Name" />
@@ -142,8 +142,9 @@
         return;
       }
 
-      currentContact = data?.debug?.contactMatch;
-      const fullName = `${currentContact["First Name"] || ""} ${currentContact["Last Name"] || ""}`.trim();
+      const fullName = data.email ? (data.email.split("@")[0].replace(/\./g, " ") || "N/A") : "N/A";
+      currentContact = data.debug?.contactMatch;
+
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
@@ -152,8 +153,7 @@
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
         data.relationships.forEach(r => {
           html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td>
-                      <td>${r.relationship_type || "N/A"}</td>
-                      <td>${r.relationship_role || "N/A"}</td></tr>`;
+                      <td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
         });
         html += "</table>";
         rels.innerHTML = html;
@@ -174,8 +174,8 @@
       const first = document.getElementById("relatedFirst").value.trim();
       const last = document.getElementById("relatedLast").value.trim();
       const email = document.getElementById("relatedEmail").value.trim();
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
 
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else if (first && last) {
@@ -187,7 +187,6 @@
 
       const res = await fetch(url);
       const data = await res.json();
-
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
@@ -196,7 +195,7 @@
         return;
       }
 
-      relatedContact = data?.debug?.contactMatch;
+      relatedContact = data.debug?.contactMatch;
       const name = `${relatedContact["First Name"]} ${relatedContact["Last Name"]}`.trim();
 
       result.innerHTML = `
@@ -214,7 +213,6 @@
               <option value="Mother">Mother</option>
             </select>
           </div>
-
           <div style="flex: 1;">
             <label for="relationshipRole">Relationship Role:</label>
             <select id="relationshipRole" style="width: 100%; padding: 6px;">
@@ -228,7 +226,6 @@
             </select>
           </div>
         </div>
-
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
     }
@@ -264,3 +261,4 @@
   </script>
 </body>
 </html>
+
