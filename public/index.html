@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search</h2>
+      <h2>NYFO Contact Relationship Search Tool</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -92,6 +92,11 @@
 
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
+      <div class="input-group">
+        <input type="text" id="relatedFirstName" placeholder="First Name" />
+        <input type="text" id="relatedLastName" placeholder="Last Name" />
+      </div>
+      <div class="or-separator">— OR —</div>
       <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
@@ -162,15 +167,16 @@
     }
 
     function showAddRelationshipForm() {
-      // Clear all search fields
+      // Clear top search fields
       document.getElementById("firstName").value = "";
       document.getElementById("lastName").value = "";
       document.getElementById("email").value = "";
 
-      // Clear related fields
+      // Clear related search inputs
+      document.getElementById("relatedFirstName").value = "";
+      document.getElementById("relatedLastName").value = "";
       document.getElementById("relatedEmail").value = "";
       document.getElementById("relatedResult").innerHTML = "";
-
       relatedContact = null;
 
       document.getElementById("addBox").classList.remove("hidden");
@@ -178,13 +184,22 @@
 
     async function searchRelated() {
       const email = document.getElementById("relatedEmail").value.trim();
+      const first = document.getElementById("relatedFirstName").value.trim();
+      const last = document.getElementById("relatedLastName").value.trim();
 
-      if (!email) {
-        alert("Enter related contact's email");
+      if (!email && (!first || !last)) {
+        alert("Enter either email or both first and last name");
         return;
       }
 
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      if (email) {
+        url += "email=" + encodeURIComponent(email);
+      } else {
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      }
+
+      const res = await fetch(url);
       const data = await res.json();
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
