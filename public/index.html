@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search 44</h2>
+      <h2>NYFO Contact Relationship Search 1 </h2>
       <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -136,18 +136,18 @@
       resultBox.classList.add("hidden");
       addBox.classList.add("hidden");
 
-      if (data?.email === "N/A") {
+      if (!data.contact || data.email === "N/A") {
         info.innerHTML = "<p><strong>Contact not found</strong></p>";
         resultBox.classList.remove("hidden");
         return;
       }
 
-      const fullName = data.email ? (data.email.split("@")[0].replace(/\./g, " ") || "N/A") : "N/A";
-      currentContact = data.debug?.contactMatch;
+      currentContact = data.contact;
+      const fullName = `${currentContact["First Name"] || ""} ${currentContact["Last Name"] || ""}`.trim();
 
-      info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
+      info.innerHTML = `<p><strong>Name:</strong> ${fullName || "N/A"} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
-                        <strong>Phone:</strong> ${data.phone}</p>`;
+                        <strong>Phone:</strong> ${data.phone || "N/A"}</p>`;
 
       if (data.relationships.length > 0) {
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
@@ -190,12 +190,12 @@
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
-      if (data?.email === "N/A") {
+      if (!data.contact || data.email === "N/A") {
         result.innerHTML = "<p><strong>Related contact not found</strong></p>";
         return;
       }
 
-      relatedContact = data.debug?.contactMatch;
+      relatedContact = data.contact;
       const name = `${relatedContact["First Name"]} ${relatedContact["Last Name"]}`.trim();
 
       result.innerHTML = `
@@ -261,4 +261,3 @@
   </script>
 </body>
 </html>
-
