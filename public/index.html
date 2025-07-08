@@ -72,7 +72,12 @@
   <div class="container">
     <div class="box">
       <h2>NYFO Contact Relationship Search</h2>
-      <p>Search by <strong>Email</strong>.</p>
+      <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
+      <div class="input-group">
+        <input type="text" id="firstName" placeholder="First Name" />
+        <input type="text" id="lastName" placeholder="Last Name" />
+      </div>
+      <div class="or-separator">— OR —</div>
       <div class="input-group">
         <input type="text" id="email" placeholder="Email" />
       </div>
@@ -88,6 +93,11 @@
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
       <div class="input-group">
+        <input type="text" id="relatedFirst" placeholder="First Name" />
+        <input type="text" id="relatedLast" placeholder="Last Name" />
+      </div>
+      <div class="or-separator">— OR —</div>
+      <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
       <button onclick="searchRelated()">Search Related Contact</button>
@@ -100,14 +110,21 @@
     let relatedContact = null;
 
     async function handleSearch() {
+      const first = document.getElementById("firstName").value.trim();
+      const last = document.getElementById("lastName").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      if (!email) {
-        alert("Enter email");
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      if (email) {
+        url += "email=" + encodeURIComponent(email);
+      } else if (first && last) {
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      } else {
+        alert("Enter email or first + last name");
         return;
       }
 
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
+      const res = await fetch(url);
       const data = await res.json();
 
       const info = document.getElementById("contactInfo");
@@ -125,8 +142,8 @@
         return;
       }
 
-      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
-      currentContact = data;
+      const fullName = `${data.contact?.["First Name"] || ""} ${data.contact?.["Last Name"] || ""}`.trim() || "N/A";
+      currentContact = data.contact;
 
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
@@ -154,14 +171,21 @@
     }
 
     async function searchRelated() {
+      const first = document.getElementById("relatedFirst").value.trim();
+      const last = document.getElementById("relatedLast").value.trim();
       const email = document.getElementById("relatedEmail").value.trim();
 
-      if (!email) {
-        alert("Enter related contact's email");
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      if (email) {
+        url += "email=" + encodeURIComponent(email);
+      } else if (first && last) {
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      } else {
+        alert("Enter related contact's email or first + last name");
         return;
       }
 
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
+      const res = await fetch(url);
       const data = await res.json();
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
@@ -171,8 +195,8 @@
         return;
       }
 
-      relatedContact = data;
-      const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+      relatedContact = data.contact;
+      const name = `${relatedContact["First Name"]} ${relatedContact["Last Name"]}`.trim();
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
@@ -213,8 +237,8 @@
       if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
-        source_contact_id: currentContact.contact_id || currentContact["Contact Id"],
-        related_contact_id: relatedContact.contact_id || relatedContact["Contact Id"],
+        source_contact_id: currentContact["Contact Id"],
+        related_contact_id: relatedContact["Contact Id"],
         relationship_type: type,
         relationship_role: role
       };
@@ -237,3 +261,4 @@
   </script>
 </body>
 </html>
+
