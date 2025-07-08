@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Relationships</title>
+  <title>NYFO Contact Relationship Search</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -72,12 +72,7 @@
   <div class="container">
     <div class="box">
       <h2>NYFO Contact Relationship Search</h2>
-      <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
-      <div class="input-group">
-        <input type="text" id="firstName" placeholder="First Name" />
-        <input type="text" id="lastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
+      <p>Search by <strong>Email</strong>.</p>
       <div class="input-group">
         <input type="text" id="email" placeholder="Email" />
       </div>
@@ -93,11 +88,6 @@
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
       <div class="input-group">
-        <input type="text" id="relatedFirst" placeholder="First Name" />
-        <input type="text" id="relatedLast" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
       <button onclick="searchRelated()">Search Related Contact</button>
@@ -110,21 +100,14 @@
     let relatedContact = null;
 
     async function handleSearch() {
-      const first = document.getElementById("firstName").value.trim();
-      const last = document.getElementById("lastName").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
-      if (email) {
-        url += "email=" + encodeURIComponent(email);
-      } else if (first && last) {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
-      } else {
-        alert("Enter email or first + last name");
+      if (!email) {
+        alert("Enter email");
         return;
       }
 
-      const res = await fetch(url);
+      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
       const data = await res.json();
 
       const info = document.getElementById("contactInfo");
@@ -136,20 +119,15 @@
       resultBox.classList.add("hidden");
       addBox.classList.add("hidden");
 
-      if (!data || data.email === "N/A") {
+      if (data?.email === "N/A") {
         info.innerHTML = "<p><strong>Contact not found</strong></p>";
         resultBox.classList.remove("hidden");
         return;
       }
 
-      // Store contact info for use in save
-      currentContact = {
-        "Contact Id": data.relationships?.[0]?.source_name !== "Unknown" ? "source" : "related",
-        "Email": data.email,
-        "Phone": data.phone
-      };
+      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+      currentContact = data;
 
-      const fullName = data.email?.split("@")[0].replace(/\./g, " ");
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
@@ -176,36 +154,25 @@
     }
 
     async function searchRelated() {
-      const first = document.getElementById("relatedFirst").value.trim();
-      const last = document.getElementById("relatedLast").value.trim();
       const email = document.getElementById("relatedEmail").value.trim();
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
-      if (email) {
-        url += "email=" + encodeURIComponent(email);
-      } else if (first && last) {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
-      } else {
-        alert("Enter related contact's email or first + last name");
+      if (!email) {
+        alert("Enter related contact's email");
         return;
       }
 
-      const res = await fetch(url);
+      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
       const data = await res.json();
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
-      if (!data || data.email === "N/A") {
+      if (data?.email === "N/A") {
         result.innerHTML = "<p><strong>Related contact not found</strong></p>";
         return;
       }
 
-      relatedContact = {
-        "Email": data.email,
-        "Phone": data.phone
-      };
-
-      const name = data.email?.split("@")[0].replace(/\./g, " ");
+      relatedContact = data;
+      const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
@@ -246,8 +213,8 @@
       if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
-        source_contact_id: currentContact["Email"],
-        related_contact_id: relatedContact["Email"],
+        source_contact_id: currentContact.contact_id || currentContact["Contact Id"],
+        related_contact_id: relatedContact.contact_id || relatedContact["Contact Id"],
         relationship_type: type,
         relationship_role: role
       };
