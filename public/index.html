@@ -126,7 +126,6 @@
 
       const res = await fetch(url);
       const data = await res.json();
-      console.log("Debug response:", data?.debug);
 
       const info = document.getElementById("contactInfo");
       const rels = document.getElementById("relationshipResults");
@@ -188,7 +187,6 @@
 
       const res = await fetch(url);
       const data = await res.json();
-      console.log("Related contact debug:", data?.debug);
 
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
