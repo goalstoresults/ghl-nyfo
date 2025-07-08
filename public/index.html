@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search 1 </h2>
+      <h2>NYFO Contact Relationship Search</h2>
       <p>Search by <strong>First & Last Name</strong> or <strong>Email</strong>.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -136,18 +136,23 @@
       resultBox.classList.add("hidden");
       addBox.classList.add("hidden");
 
-      if (!data.contact || data.email === "N/A") {
+      if (!data || data.email === "N/A") {
         info.innerHTML = "<p><strong>Contact not found</strong></p>";
         resultBox.classList.remove("hidden");
         return;
       }
 
-      currentContact = data.contact;
-      const fullName = `${currentContact["First Name"] || ""} ${currentContact["Last Name"] || ""}`.trim();
+      // Store contact info for use in save
+      currentContact = {
+        "Contact Id": data.relationships?.[0]?.source_name !== "Unknown" ? "source" : "related",
+        "Email": data.email,
+        "Phone": data.phone
+      };
 
-      info.innerHTML = `<p><strong>Name:</strong> ${fullName || "N/A"} &nbsp;&nbsp;&nbsp;
+      const fullName = data.email?.split("@")[0].replace(/\./g, " ");
+      info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
-                        <strong>Phone:</strong> ${data.phone || "N/A"}</p>`;
+                        <strong>Phone:</strong> ${data.phone}</p>`;
 
       if (data.relationships.length > 0) {
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
@@ -190,13 +195,17 @@
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
-      if (!data.contact || data.email === "N/A") {
+      if (!data || data.email === "N/A") {
         result.innerHTML = "<p><strong>Related contact not found</strong></p>";
         return;
       }
 
-      relatedContact = data.contact;
-      const name = `${relatedContact["First Name"]} ${relatedContact["Last Name"]}`.trim();
+      relatedContact = {
+        "Email": data.email,
+        "Phone": data.phone
+      };
+
+      const name = data.email?.split("@")[0].replace(/\./g, " ");
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
@@ -237,8 +246,8 @@
       if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
-        source_contact_id: currentContact["Contact Id"],
-        related_contact_id: relatedContact["Contact Id"],
+        source_contact_id: currentContact["Email"],
+        related_contact_id: relatedContact["Email"],
         relationship_type: type,
         relationship_role: role
       };
