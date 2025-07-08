@@ -3,252 +3,220 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Search Contact Relationships</title>
+  <title>NYFO Contact Relationship Tool</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background: #f6f6f6;
+      margin: 0;
       padding: 20px;
     }
-    .container {
-      max-width: 960px;
-      margin: 0 auto;
-      background: white;
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    .box {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+      max-width: 800px;
     }
-    h2 {
-      margin-top: 0;
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
     }
-    input, select {
-      padding: 8px;
-      margin: 5px 0;
+    input {
       width: 100%;
+      padding: 8px;
+      margin-top: 5px;
       box-sizing: border-box;
     }
-    .input-row {
+    .row {
       display: flex;
-      gap: 10px;
+      gap: 20px;
     }
-    .input-row input, .input-row select {
+    .row > div {
       flex: 1;
     }
-    .or-divider {
-      text-align: center;
-      margin: 10px 0;
-      font-weight: bold;
-    }
     button {
-      background: #005eff;
-      color: white;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    button:hover {
-      background: #0045c4;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-    }
-    th {
-      background: #f0f0f0;
-    }
-    .section {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f9ff;
-      border-radius: 6px;
-    }
-    #saveMessage {
-      padding: 10px;
       margin-top: 15px;
-      border-radius: 5px;
-      display: none;
+      padding: 10px 20px;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .debug-box {
+      background: #eee;
+      padding: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      margin-top: 15px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Search Contact Relationships 2</h2>
 
-    <div class="input-row">
-      <input type="text" id="firstName" placeholder="First Name" />
-      <input type="text" id="lastName" placeholder="Last Name" />
-    </div>
-    <div class="or-divider">— OR —</div>
-    <input type="text" id="email" placeholder="Email" />
-
-    <button onclick="searchContact()">Search</button>
-
-    <div id="results" class="section" style="display: none;"></div>
-
-    <div id="addRelationshipContainer" style="display: none;" class="section">
-      <button onclick="showAddRelationshipForm()">Add Relationship</button>
-    </div>
-
-    <div id="addRelationshipForm" class="section" style="display: none;">
-      <h3>Search Related Contact</h3>
-
-      <div class="input-row">
-        <input type="text" id="relatedFirstName" placeholder="First Name" />
-        <input type="text" id="relatedLastName" placeholder="Last Name" />
+  <div class="box" id="search-section">
+    <h2>Search Contact</h2>
+    <div class="row">
+      <div>
+        <label>First Name</label>
+        <input type="text" id="firstName" />
       </div>
-      <div class="or-divider">— OR —</div>
-      <input type="text" id="relatedEmail" placeholder="Email" />
-
-      <button onclick="searchRelatedContact()">Search Related Contact</button>
-
-      <div id="relatedContactDisplay" style="margin-top:10px;"></div>
-
-      <div id="relationshipFields" style="display:none;">
-        <div class="input-row">
-          <select id="relationshipType">
-            <option value="">Select type</option>
-            <option value="Client- Vendor">Client- Vendor</option>
-            <option value="Business Partner">Business Partner</option>
-            <option value="Employee">Employee</option>
-          </select>
-
-          <select id="relationshipRole">
-            <option value="">Select role</option>
-            <option value="Accountant">Accountant</option>
-            <option value="Attorney">Attorney</option>
-            <option value="Bookkeeper">Bookkeeper</option>
-          </select>
-        </div>
-        <button onclick="saveRelationship()">Save Relationship</button>
-        <div id="saveMessage"></div>
+      <div>
+        <label>Last Name</label>
+        <input type="text" id="lastName" />
+      </div>
+      <div style="align-self: end;">
+        <button onclick="searchContact()">Search</button>
       </div>
     </div>
+    <label style="margin-top: 10px;">OR Email</label>
+    <input type="text" id="email" />
+  </div>
+
+  <div class="box" id="contact-info" style="display: none;">
+    <h3>Contact Info</h3>
+    <p><strong>Email:</strong> <span id="contactEmail"></span></p>
+    <p><strong>Phone:</strong> <span id="contactPhone"></span></p>
+
+    <h4>Current Relationships</h4>
+    <ul id="relationshipList"></ul>
+
+    <button onclick="showAddRelationship()">Add Relationship</button>
+  </div>
+
+  <div class="box" id="add-relationship-section" style="display: none;">
+    <h3>Add Relationship</h3>
+
+    <div class="row">
+      <div>
+        <label>Related First Name</label>
+        <input type="text" id="relatedFirstName" />
+      </div>
+      <div>
+        <label>Related Last Name</label>
+        <input type="text" id="relatedLastName" />
+      </div>
+      <div style="align-self: end;">
+        <button onclick="searchRelatedContact()">Search</button>
+      </div>
+    </div>
+    <label style="margin-top: 10px;">OR Related Email</label>
+    <input type="text" id="relatedEmail" />
+
+    <div id="related-info" style="display: none; margin-top: 10px;">
+      <label>Relationship Type</label>
+      <input type="text" id="relationshipType" />
+
+      <label>Relationship Role</label>
+      <input type="text" id="relationshipRole" />
+
+      <button onclick="saveRelationship()">Save Relationship</button>
+    </div>
+
+    <div id="saveMessage" class="debug-box"></div>
   </div>
 
   <script>
-    let currentContactId = null;
+    let contactId = null;
     let relatedContactId = null;
 
     async function searchContact() {
-      const first = document.getElementById('firstName').value.trim();
-      const last = document.getElementById('lastName').value.trim();
-      const email = document.getElementById('email').value.trim();
-      let url = 'https://ghl-nyfo-api.dennis-e64.workers.dev/?';
+      const email = document.getElementById("email").value.trim();
+      const first = document.getElementById("firstName").value.trim();
+      const last = document.getElementById("lastName").value.trim();
 
+      const url = new URL("https://ghl-nyfo.pages.dev/search-contact");
       if (email) {
-        url += `email=${encodeURIComponent(email)}`;
-      } else if (first && last) {
-        url += `first_name=${encodeURIComponent(first)}&last_name=${encodeURIComponent(last)}`;
+        url.searchParams.set("email", email);
       } else {
-        alert('Please enter either email or first and last name.');
-        return;
+        url.searchParams.set("first", first);
+        url.searchParams.set("last", last);
       }
 
       const res = await fetch(url);
       const data = await res.json();
+      console.log("Search contact result:", data);
 
-      currentContactId = data.debug?.matchingContactId;
-      const contactName = `${data.debug?.contactMatch["First Name"]} ${data.debug?.contactMatch["Last Name"]}`;
-      const { email: contactEmail, phone } = data;
+      if (data.email !== "N/A") {
+        document.getElementById("contactEmail").textContent = data.email;
+        document.getElementById("contactPhone").textContent = data.phone;
+        document.getElementById("contact-info").style.display = "block";
+        contactId = data.debug.matchingContactId;
 
-      let html = `<strong>Name:</strong> ${contactName} &nbsp;&nbsp; <strong>Email:</strong> ${contactEmail} &nbsp;&nbsp; <strong>Phone:</strong> ${phone}`;
-
-      if (data.relationships.length > 0) {
-        html += `<table><thead><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr></thead><tbody>`;
-        data.relationships.forEach(r => {
-          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td><td>${r.relationship_type || 'N/A'}</td><td>${r.relationship_role || 'N/A'}</td></tr>`;
-        });
-        html += `</tbody></table>`;
+        const relList = document.getElementById("relationshipList");
+        relList.innerHTML = "";
+        for (const rel of data.relationships) {
+          const li = document.createElement("li");
+          li.textContent = `${rel.relationship_type} (${rel.relationship_role}) → ${rel.related_name}`;
+          relList.appendChild(li);
+        }
       } else {
-        html += `<p>No relationships found.</p>`;
+        alert("Contact not found.");
       }
-
-      document.getElementById('results').innerHTML = html;
-      document.getElementById('results').style.display = 'block';
-      document.getElementById('addRelationshipContainer').style.display = 'block';
     }
 
-    function showAddRelationshipForm() {
-      document.getElementById('addRelationshipForm').style.display = 'block';
-      document.getElementById('saveMessage').style.display = 'none';
+    function showAddRelationship() {
+      document.getElementById("add-relationship-section").style.display = "block";
     }
 
     async function searchRelatedContact() {
-      const first = document.getElementById('relatedFirstName').value.trim();
-      const last = document.getElementById('relatedLastName').value.trim();
-      const email = document.getElementById('relatedEmail').value.trim();
-      let url = 'https://ghl-nyfo-api.dennis-e64.workers.dev/?';
+      const email = document.getElementById("relatedEmail").value.trim();
+      const first = document.getElementById("relatedFirstName").value.trim();
+      const last = document.getElementById("relatedLastName").value.trim();
 
+      const url = new URL("https://ghl-nyfo.pages.dev/search-contact");
       if (email) {
-        url += `email=${encodeURIComponent(email)}`;
-      } else if (first && last) {
-        url += `first_name=${encodeURIComponent(first)}&last_name=${encodeURIComponent(last)}`;
+        url.searchParams.set("email", email);
       } else {
-        alert('Please enter email or first and last name of related contact.');
-        return;
+        url.searchParams.set("first", first);
+        url.searchParams.set("last", last);
       }
 
       const res = await fetch(url);
       const data = await res.json();
+      console.log("Related contact result:", data);
 
-      if (data.debug?.matchingContactId) {
+      if (data.email !== "N/A") {
         relatedContactId = data.debug.matchingContactId;
-        const name = `${data.debug?.contactMatch["First Name"]} ${data.debug?.contactMatch["Last Name"]}`;
-        const email = data.email;
-        document.getElementById('relatedContactDisplay').innerHTML = `<strong>Related:</strong> ${name} (${email})`;
-        document.getElementById('relationshipFields').style.display = 'block';
+        document.getElementById("related-info").style.display = "block";
+        document.getElementById("saveMessage").textContent = "Related contact found.";
       } else {
-        alert('Related contact not found.');
-        document.getElementById('relationshipFields').style.display = 'none';
+        document.getElementById("saveMessage").textContent = "Related contact not found.";
+        document.getElementById("related-info").style.display = "none";
       }
     }
 
     async function saveRelationship() {
-      const type = document.getElementById('relationshipType').value;
-      const role = document.getElementById('relationshipRole').value;
-      const msgBox = document.getElementById('saveMessage');
-
-      if (!currentContactId || !relatedContactId || !type || !role) {
-        msgBox.innerHTML = '❌ Missing required fields.';
-        msgBox.style.background = '#ffe0e0';
-        msgBox.style.display = 'block';
-        return;
-      }
+      const type = document.getElementById("relationshipType").value.trim();
+      const role = document.getElementById("relationshipRole").value.trim();
 
       const payload = {
-        source_contact_id: currentContactId,
+        source_contact_id: contactId,
         related_contact_id: relatedContactId,
         relationship_type: type,
         relationship_role: role
       };
 
-      const res = await fetch('https://ghl-nyfo-save-relationship.dennis-e64.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      console.log("Saving relationship with payload:", payload);
+
+      const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      const result = await res.json();
+      console.log("Save response:", result);
 
-      if (res.ok && data.success) {
-        msgBox.innerHTML = '✅ Relationship saved successfully. Refresh the page to see it below.';
-        msgBox.style.background = '#d4f4d4';
+      const msgBox = document.getElementById("saveMessage");
+      if (result.success) {
+        msgBox.textContent = "Relationship saved successfully.\n" + JSON.stringify(result.debug, null, 2);
       } else {
-        msgBox.innerHTML = `❌ Failed to save relationship.<br><pre>${JSON.stringify(data.debug || data, null, 2)}</pre>`;
-        msgBox.style.background = '#ffe0e0';
+        msgBox.textContent = "Failed to save relationship.\n" + JSON.stringify(result.debug || result, null, 2);
       }
-
-      msgBox.style.padding = '10px';
-      msgBox.style.marginTop = '15px';
-      msgBox.style.borderRadius = '5px';
-      msgBox.style.display = 'block';
     }
   </script>
 </body>
