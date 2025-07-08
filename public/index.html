@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -88,7 +88,6 @@
       <div id="contactInfo"></div>
       <div id="relationshipResults"></div>
       <button onclick="showAddRelationshipForm()">Add Relationship</button>
-      <button onclick="resetSearch()">New Search</button>
     </div>
 
     <div id="addBox" class="box hidden">
@@ -110,24 +109,19 @@
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
 
-      if (email && (first || last)) {
-        alert("Please enter either email OR first + last name — not both.");
-        return;
-      }
-
       if (!email && (!first || !last)) {
-        alert("Please provide either full name or an email.");
+        alert("Enter either email or both first and last name");
         return;
       }
 
-      let query = "";
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
       if (email) {
-        query = "?email=" + encodeURIComponent(email);
+        url += "email=" + encodeURIComponent(email);
       } else {
-        query = `?first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       }
 
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/" + query);
+      const res = await fetch(url);
       const data = await res.json();
 
       const info = document.getElementById("contactInfo");
@@ -168,10 +162,18 @@
     }
 
     function showAddRelationshipForm() {
-      document.getElementById("addBox").classList.remove("hidden");
+      // Clear all search fields
+      document.getElementById("firstName").value = "";
+      document.getElementById("lastName").value = "";
+      document.getElementById("email").value = "";
+
+      // Clear related fields
       document.getElementById("relatedEmail").value = "";
-      document.getElementById("relatedResult").innerHTML = '';
+      document.getElementById("relatedResult").innerHTML = "";
+
       relatedContact = null;
+
+      document.getElementById("addBox").classList.remove("hidden");
     }
 
     async function searchRelated() {
@@ -254,23 +256,6 @@
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
-    }
-
-    function resetSearch() {
-      document.getElementById("firstName").value = "";
-      document.getElementById("lastName").value = "";
-      document.getElementById("email").value = "";
-
-      document.getElementById("contactInfo").innerHTML = "";
-      document.getElementById("relationshipResults").innerHTML = "";
-      document.getElementById("resultBox").classList.add("hidden");
-
-      document.getElementById("relatedEmail").value = "";
-      document.getElementById("relatedResult").innerHTML = "";
-      document.getElementById("addBox").classList.add("hidden");
-
-      currentContact = null;
-      relatedContact = null;
     }
   </script>
 </body>
