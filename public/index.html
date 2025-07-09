@@ -2,252 +2,246 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NYFO Contact Relationship Search</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f8;
+      background: #f6f6f9;
       margin: 0;
       padding: 20px;
     }
     .container {
       max-width: 900px;
       margin: auto;
-    }
-    .box {
       background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-    h2 {
-      margin-top: 0;
-    }
-    .input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     input, select {
-      padding: 8px;
-      font-size: 16px;
-      flex: 1;
+      padding: 10px;
+      margin: 5px;
+      width: calc(50% - 30px);
     }
     button {
-      background-color: #0057ff;
+      background: #0066ff;
       color: white;
-      padding: 10px 18px;
       border: none;
-      border-radius: 4px;
+      padding: 10px 20px;
+      margin: 10px 5px;
       cursor: pointer;
-      margin-top: 10px;
+      border-radius: 5px;
     }
-    .or-separator {
-      text-align: center;
-      margin: 10px 0;
-      font-weight: bold;
-      color: #555;
+    button:hover {
+      background: #0052cc;
+    }
+    hr {
+      margin: 20px 0;
+    }
+    .result-box, .relationship-form {
+      margin-top: 20px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 15px;
     }
     th, td {
+      padding: 10px;
       border: 1px solid #ccc;
-      padding: 8px 12px;
-      text-align: left;
     }
-    th {
-      background-color: #f0f0f0;
-    }
-    .hidden {
-      display: none;
+    .or-divider {
+      text-align: center;
+      margin: 10px 0;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="box">
-      <h2>NYFO Contact Relationship Search</h2>
-      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
-      <div class="input-group">
-        <input type="text" id="mainFirstName" placeholder="First Name" />
-        <input type="text" id="mainLastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="mainEmail" placeholder="Email" />
-      </div>
-      <button onclick="handleSearch()">Search</button>
-    </div>
+    <h2>NYFO Contact Relationship Search Tool</h2>
 
-    <div id="resultBox" class="box hidden">
-      <div id="contactInfo"></div>
-      <div id="relationshipResults"></div>
-      <button onclick="showAddRelationshipForm()">Add Relationship</button>
-    </div>
+    <p><strong>Please enter either <u>First & Last Name</u> or <u>Email</u></strong>, not both.</p>
 
-    <div id="addBox" class="box hidden">
-      <h3>Search Related Contact</h3>
-      <div class="input-group">
-        <input type="text" id="relatedEmail" placeholder="Email" />
-      </div>
-      <button onclick="searchRelated()">Search Related Contact</button>
-      <div id="relatedResult"></div>
-    </div>
+    <input type="text" id="firstNameInput" placeholder="First Name" />
+    <input type="text" id="lastNameInput" placeholder="Last Name" />
+
+    <div class="or-divider">— OR —</div>
+
+    <input type="email" id="emailInput" placeholder="Email" style="width: 100%;" />
+    <br />
+    <button onclick="searchContact()">Search</button>
+
+    <div class="result-box" id="resultBox" style="display:none;"></div>
   </div>
 
   <script>
     let currentContact = null;
-    let relatedContact = null;
 
-    async function handleSearch() {
-      const email = document.getElementById("mainEmail").value.trim();
-      const first = document.getElementById("mainFirstName").value.trim();
-      const last = document.getElementById("mainLastName").value.trim();
+    async function searchContact() {
+      const email = document.getElementById("emailInput").value.trim();
+      const first = document.getElementById("firstNameInput").value.trim();
+      const last = document.getElementById("lastNameInput").value.trim();
 
-      if (email && (first || last)) {
-        alert("Please use either name or email, not both.");
+      if (!email && (!first || !last)) {
+        alert("Enter either email or both first and last name");
         return;
       }
 
       let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
-      if (email) url += `email=${encodeURIComponent(email)}`;
-      else if (first && last) url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
-      else {
-        alert("Enter either Email or First + Last Name");
-        return;
+      if (email) {
+        url += `email=${encodeURIComponent(email)}`;
+      } else {
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       }
 
       const res = await fetch(url);
       const data = await res.json();
 
-      const info = document.getElementById("contactInfo");
-      const rels = document.getElementById("relationshipResults");
-      const resultBox = document.getElementById("resultBox");
-      const addBox = document.getElementById("addBox");
-      info.innerHTML = '';
-      rels.innerHTML = '';
-      resultBox.classList.add("hidden");
-      addBox.classList.add("hidden");
-
-      if (data?.email === "N/A") {
-        info.innerHTML = "<p><strong>Contact not found</strong></p>";
-        resultBox.classList.remove("hidden");
+      if (data.email === "N/A") {
+        document.getElementById("resultBox").innerHTML = "<p>Contact not found.</p>";
+        document.getElementById("resultBox").style.display = "block";
+        currentContact = null;
         return;
       }
 
-      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
       currentContact = data;
+      renderResult(data);
+    }
 
-      info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
-                        <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
-                        <strong>Phone:</strong> ${data.phone}</p>`;
+    function renderResult(data) {
+      const box = document.getElementById("resultBox");
+      box.style.display = "block";
+
+      let html = `
+        <p><strong>Name:</strong> ${data.first_name} ${data.last_name}
+        &nbsp;&nbsp;&nbsp;<strong>Email:</strong> ${data.email}
+        &nbsp;&nbsp;&nbsp;<strong>Phone:</strong> ${data.phone}</p>
+      `;
 
       if (data.relationships.length > 0) {
-        let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
-        data.relationships.forEach(r => {
-          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td>
-                      <td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
+        html += `
+          <table>
+            <tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>
+        `;
+        data.relationships.forEach(rel => {
+          html += `<tr>
+            <td>${rel.source_name}</td>
+            <td>${rel.related_name}</td>
+            <td>${rel.relationship_type}</td>
+            <td>${rel.relationship_role}</td>
+          </tr>`;
         });
-        html += "</table>";
-        rels.innerHTML = html;
+        html += `</table>`;
       } else {
-        rels.innerHTML = "<p><em>No relationships found.</em></p>";
+        html += `<p><em>No relationships found.</em></p>`;
       }
 
-      resultBox.classList.remove("hidden");
+      html += `<button onclick="showAddRelationship()">Add Relationship</button>
+        <div class="relationship-form" id="addRelForm" style="display:none;"></div>
+      `;
+
+      box.innerHTML = html;
     }
 
-    function showAddRelationshipForm() {
-      document.getElementById("addBox").classList.remove("hidden");
-      document.getElementById("relatedEmail").value = '';
-      document.getElementById("relatedResult").innerHTML = '';
-      relatedContact = null;
-    }
+    function showAddRelationship() {
+      const form = document.getElementById("addRelForm");
+      form.style.display = "block";
 
-    async function searchRelated() {
-      const email = document.getElementById("relatedEmail").value.trim();
-
-      if (!email) {
-        alert("Enter related contact's email");
-        return;
-      }
-
-      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
-      const data = await res.json();
-      const result = document.getElementById("relatedResult");
-      result.innerHTML = '';
-
-      if (data?.email === "N/A") {
-        result.innerHTML = "<p><strong>Related contact not found</strong></p>";
-        return;
-      }
-
-      relatedContact = data;
-      const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
-
-      result.innerHTML = `
-        <p><strong>Related:</strong> ${name} (${data.email})</p>
-        <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
-          <div style="flex: 1;">
-            <label for="relationshipType">Relationship Type:</label>
-            <select id="relationshipType" style="width: 100%; padding: 6px;">
-              <option value="">Select type</option>
-              <option value="Client- Vendor">Client- Vendor</option>
-              <option value="Partner">Partner</option>
-              <option value="Family">Family</option>
-              <option value="Advisor">Advisor</option>
-              <option value="Colleague">Colleague</option>
-              <option value="Mother">Mother</option>
-            </select>
-          </div>
-          <div style="flex: 1;">
-            <label for="relationshipRole">Relationship Role:</label>
-            <select id="relationshipRole" style="width: 100%; padding: 6px;">
-              <option value="">Select role</option>
-              <option value="Accountant">Accountant</option>
-              <option value="Attorney">Attorney</option>
-              <option value="Spouse">Spouse</option>
-              <option value="Assistant">Assistant</option>
-              <option value="Manager">Manager</option>
-              <option value="Guardian">Guardian</option>
-            </select>
-          </div>
-        </div>
+      form.innerHTML = `
+        <h3>Search Related Contact</h3>
+        <input type="text" id="relatedFirstName" placeholder="First Name" />
+        <input type="text" id="relatedLastName" placeholder="Last Name" />
+        <div class="or-divider">— OR —</div>
+        <input type="email" id="relatedEmail" placeholder="Email" style="width: 100%;" />
+        <br />
+        <button onclick="searchRelatedContact()">Search Related Contact</button>
+        <div id="relatedResult"></div>
+        <br />
+        <label>Relationship Type:</label>
+        <input type="text" id="relType" placeholder="e.g. Client- Vendor" />
+        <label>Relationship Role:</label>
+        <input type="text" id="relRole" placeholder="e.g. Attorney" />
+        <br />
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
     }
 
-    async function saveRelationship() {
-      const type = document.getElementById("relationshipType").value.trim();
-      const role = document.getElementById("relationshipRole").value.trim();
+    let relatedContact = null;
 
-      if (!type || !role) return alert("Type and Role are required.");
+    async function searchRelatedContact() {
+      const email = document.getElementById("relatedEmail").value.trim();
+      const first = document.getElementById("relatedFirstName").value.trim();
+      const last = document.getElementById("relatedLastName").value.trim();
+
+      if (!email && (!first || !last)) {
+        alert("Enter either email or both first and last name");
+        return;
+      }
+
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      if (email) {
+        url += `email=${encodeURIComponent(email)}`;
+      } else {
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.email === "N/A") {
+        document.getElementById("relatedResult").innerHTML = "<p>Related contact not found.</p>";
+        relatedContact = null;
+        return;
+      }
+
+      relatedContact = data;
+      document.getElementById("relatedResult").innerHTML =
+        `<p><strong>Related:</strong> ${data.first_name} ${data.last_name} (${data.email})</p>`;
+    }
+
+    async function saveRelationship() {
+      const relType = document.getElementById("relType").value.trim();
+      const relRole = document.getElementById("relRole").value.trim();
+
+      if (!currentContact || !relatedContact || !relType || !relRole) {
+        alert("Save failed: Missing fields");
+        return;
+      }
 
       const payload = {
-        source_contact_id: currentContact.contact_id || currentContact["Contact Id"],
-        related_contact_id: relatedContact.contact_id || relatedContact["Contact Id"],
-        relationship_type: type,
-        relationship_role: role
+        source_contact_id: currentContact.contact_id,
+        related_contact_id: relatedContact.contact_id,
+        relationship_type: relType,
+        relationship_role: relRole
       };
 
-      const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
+      const resp = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/save-relationship", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      const result = await res.json();
+      const result = await resp.json();
       if (result.success) {
-        alert("Relationship saved!");
-        document.getElementById("relatedEmail").value = '';
-        document.getElementById("relatedResult").innerHTML = '';
-        document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // refresh without clearing top values
+        alert("Relationship saved successfully!");
+        // Refresh contact to show new relationship
+        if (currentContact.email) {
+          document.getElementById("emailInput").value = currentContact.email;
+          document.getElementById("firstNameInput").value = "";
+          document.getElementById("lastNameInput").value = "";
+        } else {
+          document.getElementById("firstNameInput").value = currentContact.first_name;
+          document.getElementById("lastNameInput").value = currentContact.last_name;
+          document.getElementById("emailInput").value = "";
+        }
+        document.getElementById("relatedFirstName").value = "";
+        document.getElementById("relatedLastName").value = "";
+        document.getElementById("relatedEmail").value = "";
+        document.getElementById("relType").value = "";
+        document.getElementById("relRole").value = "";
+        document.getElementById("relatedResult").innerHTML = "";
+        searchContact();
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
