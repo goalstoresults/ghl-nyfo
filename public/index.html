@@ -71,15 +71,15 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
-        <input type="text" id="firstName" placeholder="First Name" />
-        <input type="text" id="lastName" placeholder="Last Name" />
+        <input type="text" id="mainFirstName" placeholder="First Name" />
+        <input type="text" id="mainLastName" placeholder="Last Name" />
       </div>
       <div class="or-separator">— OR —</div>
       <div class="input-group">
-        <input type="text" id="email" placeholder="Email" />
+        <input type="text" id="mainEmail" placeholder="Email" />
       </div>
       <button onclick="handleSearch()">Search</button>
     </div>
@@ -93,11 +93,6 @@
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
       <div class="input-group">
-        <input type="text" id="relatedFirstName" placeholder="First Name" />
-        <input type="text" id="relatedLastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
       <button onclick="searchRelated()">Search Related Contact</button>
@@ -110,20 +105,21 @@
     let relatedContact = null;
 
     async function handleSearch() {
-      const email = document.getElementById("email").value.trim();
-      const first = document.getElementById("firstName").value.trim();
-      const last = document.getElementById("lastName").value.trim();
+      const email = document.getElementById("mainEmail").value.trim();
+      const first = document.getElementById("mainFirstName").value.trim();
+      const last = document.getElementById("mainLastName").value.trim();
 
-      if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
+      if (email && (first || last)) {
+        alert("Please use either name or email, not both.");
         return;
       }
 
       let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
-      if (email) {
-        url += "email=" + encodeURIComponent(email);
-      } else {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      if (email) url += `email=${encodeURIComponent(email)}`;
+      else if (first && last) url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      else {
+        alert("Enter either Email or First + Last Name");
+        return;
       }
 
       const res = await fetch(url);
@@ -167,39 +163,21 @@
     }
 
     function showAddRelationshipForm() {
-      // Clear top search fields
-      document.getElementById("firstName").value = "";
-      document.getElementById("lastName").value = "";
-      document.getElementById("email").value = "";
-
-      // Clear related search inputs
-      document.getElementById("relatedFirstName").value = "";
-      document.getElementById("relatedLastName").value = "";
-      document.getElementById("relatedEmail").value = "";
-      document.getElementById("relatedResult").innerHTML = "";
-      relatedContact = null;
-
       document.getElementById("addBox").classList.remove("hidden");
+      document.getElementById("relatedEmail").value = '';
+      document.getElementById("relatedResult").innerHTML = '';
+      relatedContact = null;
     }
 
     async function searchRelated() {
       const email = document.getElementById("relatedEmail").value.trim();
-      const first = document.getElementById("relatedFirstName").value.trim();
-      const last = document.getElementById("relatedLastName").value.trim();
 
-      if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
+      if (!email) {
+        alert("Enter related contact's email");
         return;
       }
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
-      if (email) {
-        url += "email=" + encodeURIComponent(email);
-      } else {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
-      }
-
-      const res = await fetch(url);
+      const res = await fetch("https://ghl-nyfo-api.dennis-e64.workers.dev/?email=" + encodeURIComponent(email));
       const data = await res.json();
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
@@ -266,8 +244,10 @@
       const result = await res.json();
       if (result.success) {
         alert("Relationship saved!");
+        document.getElementById("relatedEmail").value = '';
+        document.getElementById("relatedResult").innerHTML = '';
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // refresh
+        handleSearch(); // refresh without clearing top values
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
@@ -275,4 +255,3 @@
   </script>
 </body>
 </html>
-
