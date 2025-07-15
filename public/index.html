@@ -30,7 +30,7 @@
       gap: 10px;
       margin-bottom: 10px;
     }
-    input, select {
+    input {
       padding: 8px;
       font-size: 16px;
       flex: 1;
@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool 2</h2>
+      <h2>NYFO Contact Relationship Search Tool</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -87,31 +87,13 @@
     <div id="resultBox" class="box hidden">
       <div id="contactInfo"></div>
       <div id="relationshipResults"></div>
-      <!-- <button onclick="showAddRelationshipForm()">Add Relationship</button> -->
     </div>
-
-    <!-- Add Relationship Section (Currently disabled)
-    <div id="addBox" class="box hidden">
-      <h3>Search Related Contact</h3>
-      <div class="input-group">
-        <input type="text" id="relatedFirstName" placeholder="First Name" />
-        <input type="text" id="relatedLastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="relatedEmail" placeholder="Email" />
-      </div>
-      <button onclick="searchRelated()">Search Related Contact</button>
-      <div id="relatedResult"></div>
-    </div>
-    -->
-
   </div>
 
   <script>
-    let currentContact = null;
-
-    document.getElementById("searchBtn").addEventListener("click", handleSearch);
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("searchBtn").addEventListener("click", handleSearch);
+    });
 
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
@@ -130,46 +112,47 @@
         url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       }
 
-      const res = await fetch(url);
-      const data = await res.json();
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
 
-      const info = document.getElementById("contactInfo");
-      const rels = document.getElementById("relationshipResults");
-      const resultBox = document.getElementById("resultBox");
-      info.innerHTML = '';
-      rels.innerHTML = '';
-      resultBox.classList.add("hidden");
+        const info = document.getElementById("contactInfo");
+        const rels = document.getElementById("relationshipResults");
+        const resultBox = document.getElementById("resultBox");
+        info.innerHTML = '';
+        rels.innerHTML = '';
+        resultBox.classList.add("hidden");
 
-      if (data?.email === "N/A") {
-        info.innerHTML = "<p><strong>Contact not found</strong></p>";
+        if (data?.email === "N/A") {
+          info.innerHTML = "<p><strong>Contact not found</strong></p>";
+          resultBox.classList.remove("hidden");
+          return;
+        }
+
+        const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+        info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
+                          <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
+                          <strong>Phone:</strong> ${data.phone}</p>`;
+
+        if (data.relationships?.length > 0) {
+          let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
+          data.relationships.forEach(r => {
+            const sourceName = `${r.source_first || ''} ${r.source_last || ''}`.trim() || 'Unknown';
+            const relatedName = `${r.related_first || ''} ${r.related_last || ''}`.trim() || 'Unknown';
+            html += `<tr><td>${sourceName}</td><td>${relatedName}</td>
+                        <td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
+          });
+          html += "</table>";
+          rels.innerHTML = html;
+        } else {
+          rels.innerHTML = "<p><em>No relationships found.</em></p>";
+        }
+
         resultBox.classList.remove("hidden");
-        return;
+      } catch (err) {
+        alert("Error occurred while fetching data.");
       }
-
-      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
-      currentContact = data;
-
-      info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
-                        <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
-                        <strong>Phone:</strong> ${data.phone}</p>`;
-
-      if (data.relationships.length > 0) {
-        let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
-        data.relationships.forEach(r => {
-          const sourceName = `${r.source_first || ''} ${r.source_last || ''}`.trim() || 'Unknown';
-          const relatedName = `${r.related_first || ''} ${r.related_last || ''}`.trim() || 'Unknown';
-          html += `<tr><td>${sourceName}</td><td>${relatedName}</td>
-                      <td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
-        });
-        html += "</table>";
-        rels.innerHTML = html;
-      } else {
-        rels.innerHTML = "<p><em>No relationships found.</em></p>";
-      }
-
-      resultBox.classList.remove("hidden");
     }
   </script>
 </body>
 </html>
-
