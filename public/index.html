@@ -30,7 +30,7 @@
       gap: 10px;
       margin-bottom: 10px;
     }
-    input {
+    input, select {
       padding: 8px;
       font-size: 16px;
       flex: 1;
@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search Tool xxx</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -87,12 +87,33 @@
     <div id="resultBox" class="box hidden">
       <div id="contactInfo"></div>
       <div id="relationshipResults"></div>
+
+      <!-- <button onclick="showAddRelationshipForm()">Add Relationship</button> -->
     </div>
+
+    <!-- 
+    <div id="addBox" class="box hidden">
+      <h3>Search Related Contact</h3>
+      <div class="input-group">
+        <input type="text" id="relatedFirstName" placeholder="First Name" />
+        <input type="text" id="relatedLastName" placeholder="Last Name" />
+      </div>
+      <div class="or-separator">— OR —</div>
+      <div class="input-group">
+        <input type="text" id="relatedEmail" placeholder="Email" />
+      </div>
+      <button onclick="searchRelated()">Search Related Contact</button>
+      <div id="relatedResult"></div>
+    </div>
+    -->
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("searchBtn").addEventListener("click", handleSearch);
+      const searchBtn = document.getElementById("searchBtn");
+      if (searchBtn) {
+        searchBtn.addEventListener("click", handleSearch);
+      }
     });
 
     async function handleSearch() {
@@ -153,6 +174,11 @@
         alert("Error occurred while fetching data.");
       }
     }
+
+    // async function searchRelated() { ... }
+    // async function saveRelationship() { ... }
+    // function showAddRelationshipForm() { ... }
   </script>
 </body>
 </html>
+
