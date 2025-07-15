@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Relationship Search</title>
+  <title>NYFO Contact Search xxx</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 900px;
+      max-width: 800px;
       margin: auto;
     }
     .box {
@@ -22,15 +22,12 @@
       padding: 24px;
       margin-bottom: 24px;
     }
-    h2 {
-      margin-top: 0;
-    }
     .input-group {
       display: flex;
       gap: 10px;
       margin-bottom: 10px;
     }
-    input, select {
+    input {
       padding: 8px;
       font-size: 16px;
       flex: 1;
@@ -50,19 +47,6 @@
       font-weight: bold;
       color: #555;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #f0f0f0;
-    }
     .hidden {
       display: none;
     }
@@ -71,8 +55,8 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool xxx</h2>
-      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+      <h2>Search NYFO Contact</h2>
+      <p>Enter either <strong>First & Last Name</strong> or <strong>Email</strong>:</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
         <input type="text" id="lastName" placeholder="Last Name" />
@@ -86,43 +70,17 @@
 
     <div id="resultBox" class="box hidden">
       <div id="contactInfo"></div>
-      <div id="relationshipResults"></div>
-
-      <!-- <button onclick="showAddRelationshipForm()">Add Relationship</button> -->
     </div>
-
-    <!-- 
-    <div id="addBox" class="box hidden">
-      <h3>Search Related Contact</h3>
-      <div class="input-group">
-        <input type="text" id="relatedFirstName" placeholder="First Name" />
-        <input type="text" id="relatedLastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="relatedEmail" placeholder="Email" />
-      </div>
-      <button onclick="searchRelated()">Search Related Contact</button>
-      <div id="relatedResult"></div>
-    </div>
-    -->
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const searchBtn = document.getElementById("searchBtn");
-      if (searchBtn) {
-        searchBtn.addEventListener("click", handleSearch);
-      }
-    });
-
-    async function handleSearch() {
+    document.getElementById("searchBtn").addEventListener("click", async () => {
       const email = document.getElementById("email").value.trim();
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
 
       if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
+        alert("Enter either email OR both first and last name");
         return;
       }
 
@@ -137,48 +95,26 @@
         const res = await fetch(url);
         const data = await res.json();
 
-        const info = document.getElementById("contactInfo");
-        const rels = document.getElementById("relationshipResults");
         const resultBox = document.getElementById("resultBox");
+        const info = document.getElementById("contactInfo");
         info.innerHTML = '';
-        rels.innerHTML = '';
         resultBox.classList.add("hidden");
 
         if (data?.email === "N/A") {
           info.innerHTML = "<p><strong>Contact not found</strong></p>";
-          resultBox.classList.remove("hidden");
-          return;
-        }
-
-        const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
-        info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
-                          <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
-                          <strong>Phone:</strong> ${data.phone}</p>`;
-
-        if (data.relationships?.length > 0) {
-          let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
-          data.relationships.forEach(r => {
-            const sourceName = `${r.source_first || ''} ${r.source_last || ''}`.trim() || 'Unknown';
-            const relatedName = `${r.related_first || ''} ${r.related_last || ''}`.trim() || 'Unknown';
-            html += `<tr><td>${sourceName}</td><td>${relatedName}</td>
-                        <td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
-          });
-          html += "</table>";
-          rels.innerHTML = html;
         } else {
-          rels.innerHTML = "<p><em>No relationships found.</em></p>";
+          info.innerHTML = `
+            <p><strong>Name:</strong> ${data.first_name || ''} ${data.last_name || ''}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Phone:</strong> ${data.phone}</p>
+          `;
         }
 
         resultBox.classList.remove("hidden");
       } catch (err) {
-        alert("Error occurred while fetching data.");
+        alert("Error during search. Please try again.");
       }
-    }
-
-    // async function searchRelated() { ... }
-    // async function saveRelationship() { ... }
-    // function showAddRelationshipForm() { ... }
+    });
   </script>
 </body>
 </html>
-
