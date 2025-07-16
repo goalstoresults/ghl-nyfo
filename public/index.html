@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Relationship Search</title>
+  <title>Search Contact Relationships</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool 44</h2>
+      <h2>Search Contact Relationships 1 </h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -81,7 +81,7 @@
       <div class="input-group">
         <input type="text" id="email" placeholder="Email" />
       </div>
-      <button id="searchBtn">Search</button>
+      <button onclick="handleSearch()">Search</button>
     </div>
 
     <div id="resultBox" class="box hidden">
@@ -93,8 +93,8 @@
     <div id="addBox" class="box hidden">
       <h3>Search Related Contact</h3>
       <div class="input-group">
-        <input type="text" id="relatedFirstName" placeholder="First Name" />
-        <input type="text" id="relatedLastName" placeholder="Last Name" />
+        <input type="text" id="relatedFirst" placeholder="First Name" />
+        <input type="text" id="relatedLast" placeholder="Last Name" />
       </div>
       <div class="or-separator">— OR —</div>
       <div class="input-group">
@@ -109,23 +109,20 @@
     let currentContact = null;
     let relatedContact = null;
 
-    document.getElementById("searchBtn").addEventListener("click", handleSearch);
-
     async function handleSearch() {
-      const email = document.getElementById("email").value.trim();
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
-
-      if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
-        return;
-      }
+      const email = document.getElementById("email").value.trim();
 
       let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+
       if (email) {
         url += "email=" + encodeURIComponent(email);
-      } else {
+      } else if (first && last) {
         url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      } else {
+        alert("Enter email or first + last name");
+        return;
       }
 
       const res = await fetch(url);
@@ -146,19 +143,18 @@
         return;
       }
 
-      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
-      currentContact = data;
-
+      currentContact = data?.debug?.contactMatch;
+      const fullName = `${currentContact["First Name"] || ""} ${currentContact["Last Name"] || ""}`.trim();
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
 
-      if (data.relationships && data.relationships.length > 0) {
+      if (data.relationships.length > 0) {
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
         data.relationships.forEach(r => {
-          const source = `${r.source_first || ''} ${r.source_last || ''}`.trim() || 'Unknown';
-          const related = `${r.related_first || ''} ${r.related_last || ''}`.trim() || 'Unknown';
-          html += `<tr><td>${source}</td><td>${related}</td><td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
+          html += `<tr><td>${r.source_name}</td><td>${r.related_name}</td>
+                      <td>${r.relationship_type?.value || "N/A"}</td>
+                      <td>${r.relationship_role?.value || "N/A"}</td></tr>`;
         });
         html += "</table>";
         rels.innerHTML = html;
@@ -170,29 +166,24 @@
     }
 
     function showAddRelationshipForm() {
-      document.getElementById("relatedFirstName").value = "";
-      document.getElementById("relatedLastName").value = "";
-      document.getElementById("relatedEmail").value = "";
-      document.getElementById("relatedResult").innerHTML = "";
-      relatedContact = null;
       document.getElementById("addBox").classList.remove("hidden");
+      document.getElementById("relatedResult").innerHTML = '';
+      relatedContact = null;
     }
 
     async function searchRelated() {
+      const first = document.getElementById("relatedFirst").value.trim();
+      const last = document.getElementById("relatedLast").value.trim();
       const email = document.getElementById("relatedEmail").value.trim();
-      const first = document.getElementById("relatedFirstName").value.trim();
-      const last = document.getElementById("relatedLastName").value.trim();
-
-      if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
-        return;
-      }
-
       let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+
       if (email) {
         url += "email=" + encodeURIComponent(email);
-      } else {
+      } else if (first && last) {
         url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      } else {
+        alert("Enter related contact's email or first + last name");
+        return;
       }
 
       const res = await fetch(url);
@@ -205,37 +196,38 @@
         return;
       }
 
-      relatedContact = data;
-      const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+      relatedContact = data?.debug?.contactMatch;
+      const name = `${relatedContact["First Name"]} ${relatedContact["Last Name"]}`.trim();
 
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
-        <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
-          <div style="flex: 1;">
-            <label for="relationshipType">Relationship Type:</label>
-            <select id="relationshipType" style="width: 100%; padding: 6px;">
-              <option value="">Select type</option>
-              <option value="Client- Vendor">Client- Vendor</option>
-              <option value="Partner">Partner</option>
-              <option value="Family">Family</option>
-              <option value="Advisor">Advisor</option>
-              <option value="Colleague">Colleague</option>
-              <option value="Mother">Mother</option>
-            </select>
-          </div>
-          <div style="flex: 1;">
-            <label for="relationshipRole">Relationship Role:</label>
-            <select id="relationshipRole" style="width: 100%; padding: 6px;">
-              <option value="">Select role</option>
-              <option value="Accountant">Accountant</option>
-              <option value="Attorney">Attorney</option>
-              <option value="Spouse">Spouse</option>
-              <option value="Assistant">Assistant</option>
-              <option value="Manager">Manager</option>
-              <option value="Guardian">Guardian</option>
-            </select>
-          </div>
-        </div>
+<div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
+  <div style="flex: 1;">
+    <label for="relationshipType">Relationship Type:</label>
+    <select id="relationshipType" style="width: 100%; padding: 6px;">
+      <option value="">Select type</option>
+      <option value="Client- Vendor">Client- Vendor</option>
+      <option value="Partner">Partner</option>
+      <option value="Family">Family</option>
+      <option value="Advisor">Advisor</option>
+      <option value="Colleague">Colleague</option>
+    </select>
+  </div>
+
+  <div style="flex: 1;">
+    <label for="relationshipRole">Relationship Role:</label>
+    <select id="relationshipRole" style="width: 100%; padding: 6px;">
+      <option value="">Select role</option>
+      <option value="Accountant">Accountant</option>
+      <option value="Attorney">Attorney</option>
+      <option value="Spouse">Spouse</option>
+      <option value="Assistant">Assistant</option>
+      <option value="Manager">Manager</option>
+    </select>
+  </div>
+</div>
+
+
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
     }
@@ -247,14 +239,10 @@
       if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
-        source_id: currentContact.contact_id || currentContact["Contact Id"],
-        related_id: relatedContact.contact_id || relatedContact["Contact Id"],
+        source_contact_id: currentContact["Contact Id"],
+        related_contact_id: relatedContact["Contact Id"],
         relationship_type: type,
-        relationship_role: role,
-        source_first_name: currentContact.first_name,
-        source_last_name: currentContact.last_name,
-        related_first_name: relatedContact.first_name,
-        related_last_name: relatedContact.last_name
+        relationship_role: role
       };
 
       const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
@@ -267,7 +255,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch();
+        handleSearch(); // refresh
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
@@ -275,4 +263,3 @@
   </script>
 </body>
 </html>
-
