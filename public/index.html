@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search Tool 44</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -87,7 +87,7 @@
     <div id="resultBox" class="box hidden">
       <div id="contactInfo"></div>
       <div id="relationshipResults"></div>
-      <button id="addRelationshipBtn">Add Relationship</button>
+      <button onclick="showAddRelationshipForm()">Add Relationship</button>
     </div>
 
     <div id="addBox" class="box hidden">
@@ -100,7 +100,7 @@
       <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
-      <button id="searchRelatedBtn">Search Related Contact</button>
+      <button onclick="searchRelated()">Search Related Contact</button>
       <div id="relatedResult"></div>
     </div>
   </div>
@@ -110,8 +110,6 @@
     let relatedContact = null;
 
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
-    document.getElementById("addRelationshipBtn").addEventListener("click", showAddRelationshipForm);
-    document.getElementById("searchRelatedBtn").addEventListener("click", searchRelated);
 
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
@@ -238,11 +236,8 @@
             </select>
           </div>
         </div>
-        <button id="saveRelationshipBtn">Save Relationship</button>
+        <button onclick="saveRelationship()">Save Relationship</button>
       `;
-
-      // ✅ Add this listener after injecting the button
-      document.getElementById("saveRelationshipBtn").addEventListener("click", saveRelationship);
     }
 
     async function saveRelationship() {
@@ -272,7 +267,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // refresh
+        handleSearch();
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
@@ -280,3 +275,4 @@
   </script>
 </body>
 </html>
+
