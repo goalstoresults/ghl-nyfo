@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool 44</h2>
+      <h2>NYFO Contact Relationship Search Tool </h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -247,14 +247,14 @@
       if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
-        source_id: currentContact.contact_id || currentContact["Contact Id"],
-        related_id: relatedContact.contact_id || relatedContact["Contact Id"],
-        relationship_type: type,
-        relationship_role: role,
-        source_first_name: currentContact.first_name,
-        source_last_name: currentContact.last_name,
-        related_first_name: relatedContact.first_name,
-        related_last_name: relatedContact.last_name
+        "source_id": "0YJJ6BGThbO75N6cj7Py",
+        "related_id": "0eRHQxpwwU32SHBWz6ZS",
+        "relationship_type": "Client- Vendor",
+        "relationship_role": "Accountant",
+        "source_first_name": "Brad",
+        "source_last_name": "Ross",
+        "related_first_name": "Dennis",
+        "related_last_name": "Riley"
       };
 
       const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
