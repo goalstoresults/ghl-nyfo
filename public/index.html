@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search Tool 2</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -87,7 +87,7 @@
     <div id="resultBox" class="box hidden">
       <div id="contactInfo"></div>
       <div id="relationshipResults"></div>
-      <button onclick="showAddRelationshipForm()">Add Relationship</button>
+      <button id="addRelationshipBtn">Add Relationship</button>
     </div>
 
     <div id="addBox" class="box hidden">
@@ -100,7 +100,7 @@
       <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
-      <button onclick="searchRelated()">Search Related Contact</button>
+      <button id="searchRelatedBtn">Search Related Contact</button>
       <div id="relatedResult"></div>
     </div>
   </div>
@@ -112,7 +112,6 @@
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
     document.getElementById("addRelationshipBtn").addEventListener("click", showAddRelationshipForm);
     document.getElementById("searchRelatedBtn").addEventListener("click", searchRelated);
-
 
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
@@ -171,7 +170,8 @@
 
       resultBox.classList.remove("hidden");
     }
-       function showAddRelationshipForm() {
+
+    function showAddRelationshipForm() {
       document.getElementById("relatedFirstName").value = "";
       document.getElementById("relatedLastName").value = "";
       document.getElementById("relatedEmail").value = "";
@@ -277,3 +277,4 @@
   </script>
 </body>
 </html>
+
