@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool 44</h2>
+      <h2>NYFO Contact Relationship Search Tool</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -241,9 +241,8 @@
         <button id="saveRelationshipBtn">Save Relationship</button>
       `;
 
-      setTimeout(() => {
-        document.getElementById("saveRelationshipBtn")?.addEventListener("click", saveRelationship);
-      }, 0);
+      // ✅ Add this listener after injecting the button
+      document.getElementById("saveRelationshipBtn").addEventListener("click", saveRelationship);
     }
 
     async function saveRelationship() {
@@ -273,7 +272,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch();
+        handleSearch(); // refresh
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
@@ -281,4 +280,3 @@
   </script>
 </body>
 </html>
-
