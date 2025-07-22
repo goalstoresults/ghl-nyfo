@@ -153,15 +153,16 @@
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
 
+      // Fetch relationships
       const relRes = await fetch(`https://ghl-nyfo-relationship-search.dennis-e64.workers.dev/?contact_id=${data.contact_id}`);
       const relData = await relRes.json();
 
-      if (relData.success && relData.results?.length) {
+      if (relData.success && relData.relationships?.length) {
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
-        relData.results.forEach(r => {
-          const source = `${r["Source First Name"] || ''} ${r["Source Last Name"] || ''}`.trim() || 'Unknown';
-          const related = `${r["Related First Name"] || ''} ${r["Related Last Name"] || ''}`.trim() || 'Unknown';
-          html += `<tr><td>${source}</td><td>${related}</td><td>${r["Relationship Type"]}</td><td>${r["Relationship Role"]}</td></tr>`;
+        relData.relationships.forEach(r => {
+          const source = `${r.source_first_name || ''} ${r.source_last_name || ''}`.trim() || 'Unknown';
+          const related = `${r.related_first_name || ''} ${r.related_last_name || ''}`.trim() || 'Unknown';
+          html += `<tr><td>${source}</td><td>${related}</td><td>${r.relationship_type || '—'}</td><td>${r.relationship_role || '—'}</td></tr>`;
         });
         html += "</table>";
         rels.innerHTML = html;
@@ -270,7 +271,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch();
+        handleSearch(); // refresh relationships
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
