@@ -123,11 +123,17 @@
 
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
 
+    
     function clearSearch() {
       document.getElementById("firstName").value = "";
       document.getElementById("lastName").value = "";
       document.getElementById("email").value = "";
+      document.getElementById("resultBox").classList.add("hidden");
+      document.getElementById("addBox").classList.add("hidden");
+      document.getElementById("contactInfo").innerHTML = "";
+      document.getElementById("relationshipResults").innerHTML = "";
     }
+
 
     function clearRelated() {
       document.getElementById("relatedFirstName").value = "";
