@@ -66,12 +66,17 @@
     .hidden {
       display: none;
     }
+    .top-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tools</h2>
+      <h2>NYFO Contact Relationship Search Tools (Version 1.01)</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -81,7 +86,11 @@
       <div class="input-group">
         <input type="text" id="email" placeholder="Email" />
       </div>
-      <button id="searchBtn">Search</button>
+      <div class="top-buttons">
+        <button id="searchBtn">Search</button>
+        <button onclick="clearSearch()">Clear</button>
+        <button onclick="window.location.reload()">New Search</button>
+      </div>
     </div>
 
     <div id="resultBox" class="box hidden">
@@ -100,7 +109,10 @@
       <div class="input-group">
         <input type="text" id="relatedEmail" placeholder="Email" />
       </div>
-      <button onclick="searchRelated()">Search Related Contact</button>
+      <div class="top-buttons">
+        <button onclick="searchRelated()">Search Related Contact</button>
+        <button onclick="clearRelated()">Clear Related</button>
+      </div>
       <div id="relatedResult"></div>
     </div>
   </div>
@@ -110,6 +122,20 @@
     let relatedContact = null;
 
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
+
+    function clearSearch() {
+      document.getElementById("firstName").value = "";
+      document.getElementById("lastName").value = "";
+      document.getElementById("email").value = "";
+    }
+
+    function clearRelated() {
+      document.getElementById("relatedFirstName").value = "";
+      document.getElementById("relatedLastName").value = "";
+      document.getElementById("relatedEmail").value = "";
+      document.getElementById("relatedResult").innerHTML = "";
+      relatedContact = null;
+    }
 
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
@@ -173,11 +199,7 @@
     }
 
     function showAddRelationshipForm() {
-      document.getElementById("relatedFirstName").value = "";
-      document.getElementById("relatedLastName").value = "";
-      document.getElementById("relatedEmail").value = "";
-      document.getElementById("relatedResult").innerHTML = "";
-      relatedContact = null;
+      clearRelated();
       document.getElementById("addBox").classList.remove("hidden");
     }
 
