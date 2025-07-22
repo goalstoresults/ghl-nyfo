@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search Tool 2</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -140,26 +140,21 @@
       resultBox.classList.add("hidden");
       addBox.classList.add("hidden");
 
-      if (!data || !data.result) {
+      if (data?.email === "N/A") {
         info.innerHTML = "<p><strong>Contact not found</strong></p>";
         resultBox.classList.remove("hidden");
         return;
       }
 
-      const contact = data.result;
-      currentContact = contact;
-
-      const fullName = `${contact.first_name || contact["First Name"] || ''} ${contact.last_name || contact["Last Name"] || ''}`.trim() || "N/A";
-      const emailOut = contact.email || contact["Email"] || "N/A";
-      const phone = contact.phone || contact["Phone"] || "N/A";
+      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+      currentContact = data;
 
       info.innerHTML = `<p><strong>Name:</strong> ${fullName} &nbsp;&nbsp;&nbsp;
-                        <strong>Email:</strong> ${emailOut} &nbsp;&nbsp;&nbsp;
-                        <strong>Phone:</strong> ${phone}</p>`;
+                        <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
+                        <strong>Phone:</strong> ${data.phone}</p>`;
 
-      // Fetch relationships by contact_id
-      const relationshipRes = await fetch(`https://ghl-nyfo-relationship-search.dennis-e64.workers.dev/?contact_id=${encodeURIComponent(contact["Contact Id"])}`);
-      const relData = await relationshipRes.json();
+      const relRes = await fetch(`https://ghl-nyfo-relationship-search.dennis-e64.workers.dev/?contact_id=${encodeURIComponent(data.contact_id)}`);
+      const relData = await relRes.json();
 
       if (relData.success && relData.results.length > 0) {
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
@@ -208,17 +203,16 @@
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
-      if (!data || !data.result) {
+      if (data?.email === "N/A") {
         result.innerHTML = "<p><strong>Related contact not found</strong></p>";
         return;
       }
 
-      relatedContact = data.result;
-      const name = `${relatedContact.first_name || relatedContact["First Name"] || ''} ${relatedContact.last_name || relatedContact["Last Name"] || ''}`.trim() || "N/A";
-      const emailOut = relatedContact.email || relatedContact["Email"] || "N/A";
+      relatedContact = data;
+      const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
 
       result.innerHTML = `
-        <p><strong>Related:</strong> ${name} (${emailOut})</p>
+        <p><strong>Related:</strong> ${name} (${data.email})</p>
         <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
           <div style="flex: 1;">
             <label for="relationshipType">Relationship Type:</label>
@@ -256,14 +250,14 @@
       if (!type || !role) return alert("Type and Role are required.");
 
       const payload = {
-        source_id: currentContact["Contact Id"],
-        related_id: relatedContact["Contact Id"],
+        source_id: currentContact.contact_id,
+        related_id: relatedContact.contact_id,
         relationship_type: type,
         relationship_role: role,
-        source_first_name: currentContact["First Name"],
-        source_last_name: currentContact["Last Name"],
-        related_first_name: relatedContact["First Name"],
-        related_last_name: relatedContact["Last Name"]
+        source_first_name: currentContact.first_name,
+        source_last_name: currentContact.last_name,
+        related_first_name: relatedContact.first_name,
+        related_last_name: relatedContact.last_name
       };
 
       const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
@@ -276,7 +270,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // Reload with new data
+        handleSearch(); // refresh relationships
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
@@ -284,4 +278,3 @@
   </script>
 </body>
 </html>
-
