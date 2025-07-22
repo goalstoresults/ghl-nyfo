@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool.</h2>
+      <h2>NYFO Contact Relationship Search Tool</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -121,7 +121,7 @@
         return;
       }
 
-      let url = "https://ghl-nyfo-search.dennis-e64.workers.dev/?";
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
@@ -153,16 +153,15 @@
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
 
-      // Fetch relationships
       const relRes = await fetch(`https://ghl-nyfo-relationship-search.dennis-e64.workers.dev/?contact_id=${data.contact_id}`);
       const relData = await relRes.json();
 
-      if (relData.success && relData.relationships?.length) {
+      if (relData.success && relData.results?.length) {
         let html = `<table><tr><th>Source</th><th>Related</th><th>Type</th><th>Role</th></tr>`;
-        relData.relationships.forEach(r => {
+        relData.results.forEach(r => {
           const source = `${r.source_first_name || ''} ${r.source_last_name || ''}`.trim() || 'Unknown';
           const related = `${r.related_first_name || ''} ${r.related_last_name || ''}`.trim() || 'Unknown';
-          html += `<tr><td>${source}</td><td>${related}</td><td>${r.relationship_type || '—'}</td><td>${r.relationship_role || '—'}</td></tr>`;
+          html += `<tr><td>${source}</td><td>${related}</td><td>${r.relationship_type}</td><td>${r.relationship_role}</td></tr>`;
         });
         html += "</table>";
         rels.innerHTML = html;
@@ -192,7 +191,7 @@
         return;
       }
 
-      let url = "https://ghl-nyfo-search.dennis-e64.workers.dev/?";
+      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
