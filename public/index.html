@@ -71,7 +71,7 @@
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tool</h2>
+      <h2>NYFO Contact Relationship Search Tools</h2>
       <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
@@ -121,7 +121,7 @@
         return;
       }
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      let url = "https://ghl-nyfo-search.dennis-e64.workers.dev/?";
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
@@ -191,7 +191,7 @@
         return;
       }
 
-      let url = "https://ghl-nyfo-api.dennis-e64.workers.dev/?";
+      let url = "https://ghl-nyfo-search.dennis-e64.workers.dev/?";
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
