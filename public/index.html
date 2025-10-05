@@ -20,20 +20,14 @@
       margin-bottom: 24px;
     }
     h2 { margin-top: 0; }
-    .input-group {
-      display: flex; gap: 10px; margin-bottom: 10px;
-    }
-    input, select {
-      padding: 8px; font-size: 16px; flex: 1;
-    }
+    .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+    input, select { padding: 8px; font-size: 16px; flex: 1; }
     button {
       background-color: #0057ff; color: white;
       padding: 10px 18px; border: none; border-radius: 4px;
       cursor: pointer; margin-top: 10px;
     }
-    .or-separator {
-      text-align: center; margin: 10px 0; font-weight: bold; color: #555;
-    }
+    .or-separator { text-align: center; margin: 10px 0; font-weight: bold; color: #555; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
     th { background-color: #f0f0f0; }
@@ -41,13 +35,17 @@
     .top-buttons { display: flex; gap: 10px; margin-top: 10px; }
     .version { color: #666; font-size: 13px; margin-top: 6px; }
     label { display: block; font-size: 13px; color: #444; margin-bottom: 4px; }
+    .hint { color:#555; font-size:13px; margin-top:6px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.2</span></h2>
-      <p>Enter <strong>First and/or Last Name</strong> (min 3 letters; <code>*</code> = wildcard) or <strong>Email</strong>. Examples: <code>Ann*</code>, <code>Jo* Sm*</code>.</p>
+      <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.3</span></h2>
+      <p>
+        Enter <strong>Email</strong> <em>or</em> <strong>First &amp; Last Name</strong> (both required for name search; <code>*</code> wildcard allowed).<br/>
+        Examples: <code>Kar*</code> + <code>Nis*</code>
+      </p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
         <input type="text" id="lastName" placeholder="Last Name" />
@@ -61,6 +59,7 @@
         <button onclick="clearSearch()">Clear</button>
         <button onclick="window.location.reload()">New Search</button>
       </div>
+      <div class="hint">Tip: If using name, both fields must be filled. Use <code>*</code> for partials (e.g., <code>Ann*</code>).</div>
     </div>
 
     <div id="resultBox" class="box hidden">
@@ -83,6 +82,7 @@
         <button onclick="searchRelated()">Search Related Contact</button>
         <button onclick="clearRelated()">Clear Related</button>
       </div>
+      <div class="hint">If using name, enter both first &amp; last (wildcards <code>*</code> allowed).</div>
       <div id="relatedResult"></div>
     </div>
   </div>
@@ -135,18 +135,23 @@
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
 
-      if (!email && !first && !last) {
-        alert("Enter email or at least first or last name (min 3 letters; * allowed)");
-        return;
+      // Safeguards: if using name, require both first & last
+      if (!email) {
+        if (!first && !last) {
+          alert("Enter email or both first and last name.");
+          return;
+        }
+        if (!first || !last) {
+          alert("Please enter BOTH first and last name (or use email).");
+          return;
+        }
       }
 
       let url = `${ENDPOINT_SEARCH}/?`;
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
-        if (first) url += `first=${encodeURIComponent(first)}&`;
-        if (last)  url += `last=${encodeURIComponent(last)}&`;
-        url = url.replace(/[&?]$/, "");
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       }
 
       const res = await fetch(url);
@@ -199,18 +204,23 @@
       const first = document.getElementById("relatedFirstName").value.trim();
       const last = document.getElementById("relatedLastName").value.trim();
 
-      if (!email && !first && !last) {
-        alert("Enter email or at least first or last name (min 3 letters; * allowed)");
-        return;
+      // Safeguards: if using name, require both first & last
+      if (!email) {
+        if (!first && !last) {
+          alert("Enter email or both first and last name for the related contact.");
+          return;
+        }
+        if (!first || !last) {
+          alert("Please enter BOTH first and last name for the related contact (or use email).");
+          return;
+        }
       }
 
       let url = `${ENDPOINT_SEARCH}/?`;
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
-        if (first) url += `first=${encodeURIComponent(first)}&`;
-        if (last)  url += `last=${encodeURIComponent(last)}&`;
-        url = url.replace(/[&?]$/, "");
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
       }
 
       const res = await fetch(url);
@@ -356,4 +366,3 @@
   </script>
 </body>
 </html>
-
