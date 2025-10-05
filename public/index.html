@@ -71,13 +71,24 @@
       gap: 10px;
       margin-top: 10px;
     }
+    .version {
+      color: #666;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #444;
+      margin-bottom: 4px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="box">
-      <h2>NYFO Contact Relationship Search Tools (Version 1.01)</h2>
-      <p>Please enter either <strong>First & Last Name</strong> or <strong>Email</strong>, not both.</p>
+      <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.1</span></h2>
+      <p>Please enter either <strong>First &amp; Last Name</strong> or <strong>Email</strong>, not both.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
         <input type="text" id="lastName" placeholder="Last Name" />
@@ -118,12 +129,26 @@
   </div>
 
   <script>
+    // ===== Config =====
+    const ENDPOINT_SEARCH = "https://ghl-nyfo-search.dennis-e64.workers.dev";
+    const ENDPOINT_REL_SEARCH = "https://ghl-nyfo-relationship-search.dennis-e64.workers.dev";
+    const ENDPOINT_SAVE_REL = "https://ghl-nyfo-save-relationship.dennis-e64.workers.dev";
+    const ENDPOINT_LOOKUPS = "https://ghl-nyfo-lookups.dennis-e64.workers.dev";
+
+    // ===== State =====
     let currentContact = null;
     let relatedContact = null;
 
+    // ===== Events =====
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
 
-    
+    // Handle global change events for "Add new..." in selects
+    document.addEventListener("change", (e) => {
+      if (e.target?.id === "relationshipType") handleAddNew(e.target, "relationship_type");
+      if (e.target?.id === "relationshipRole") handleAddNew(e.target, "relationship_role");
+    });
+
+    // ===== UI Helpers =====
     function clearSearch() {
       document.getElementById("firstName").value = "";
       document.getElementById("lastName").value = "";
@@ -134,7 +159,6 @@
       document.getElementById("relationshipResults").innerHTML = "";
     }
 
-
     function clearRelated() {
       document.getElementById("relatedFirstName").value = "";
       document.getElementById("relatedLastName").value = "";
@@ -143,6 +167,12 @@
       relatedContact = null;
     }
 
+    function showAddRelationshipForm() {
+      clearRelated();
+      document.getElementById("addBox").classList.remove("hidden");
+    }
+
+    // ===== Core Actions =====
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
       const first = document.getElementById("firstName").value.trim();
@@ -153,7 +183,7 @@
         return;
       }
 
-      let url = "https://ghl-nyfo-search.dennis-e64.workers.dev/?";
+      let url = `${ENDPOINT_SEARCH}/?`;
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
@@ -172,7 +202,7 @@
       resultBox.classList.add("hidden");
       addBox.classList.add("hidden");
 
-      if (!data || !data.contact_id) {
+      if (!data || !data.contact_id || data.contact_id === "N/A") {
         info.innerHTML = "<p><strong>Contact not found</strong></p>";
         resultBox.classList.remove("hidden");
         return;
@@ -185,7 +215,8 @@
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
 
-      const relRes = await fetch(`https://ghl-nyfo-relationship-search.dennis-e64.workers.dev/?contact_id=${data.contact_id}`);
+      // fetch relationships
+      const relRes = await fetch(`${ENDPOINT_REL_SEARCH}/?contact_id=${encodeURIComponent(data.contact_id)}`);
       const relData = await relRes.json();
 
       if (relData.success && relData.results?.length) {
@@ -204,11 +235,6 @@
       resultBox.classList.remove("hidden");
     }
 
-    function showAddRelationshipForm() {
-      clearRelated();
-      document.getElementById("addBox").classList.remove("hidden");
-    }
-
     async function searchRelated() {
       const email = document.getElementById("relatedEmail").value.trim();
       const first = document.getElementById("relatedFirstName").value.trim();
@@ -219,7 +245,7 @@
         return;
       }
 
-      let url = "https://ghl-nyfo-search.dennis-e64.workers.dev/?";
+      let url = `${ENDPOINT_SEARCH}/?`;
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
@@ -231,7 +257,7 @@
       const result = document.getElementById("relatedResult");
       result.innerHTML = '';
 
-      if (!data || !data.contact_id) {
+      if (!data || !data.contact_id || data.contact_id === "N/A") {
         result.innerHTML = "<p><strong>Related contact not found</strong></p>";
         return;
       }
@@ -239,79 +265,136 @@
       relatedContact = data;
       const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
 
+      // Render Related block with empty selects; then load lookups
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
         <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
           <div style="flex: 1;">
-            <label for="relationshipType">Relationship Type:</label>
-            <select id="relationshipType" style="width: 100%; padding: 6px;">
-              <option value="">Select type</option>
-              <option value="Client- Vendor">Client- Vendor</option>
-              <option value="Partner">Partner</option>
-              <option value="Family">Family</option>
-              <option value="Advisor">Advisor</option>
-              <option value="Friend">Friend</option>
-              <option value="Colleague">Colleague</option>
-            </select>
+            <label for="relationshipType">Relationship Type</label>
+            <select id="relationshipType" style="width: 100%; padding: 6px;"></select>
           </div>
           <div style="flex: 1;">
-            <label for="relationshipRole">Relationship Role:</label>
-            <select id="relationshipRole" style="width: 100%; padding: 6px;">
-              <option value="">Select role</option>
-              <option value="Accountant">Accountant</option>
-              <option value="Aide">Aide</option>
-              <option value="Attorney - Elder Law">Attorney - Elder Law</option>
-              <option value="Attorney - Guardianship">Attorney - Guardianship</option>
-              <option value="Attorney - Misc">Attorney - Misc</option>
-              <option value="Attorney - T&E">Attorney - T&E</option>
-              <option value="Behavioral Therapist">Behavioral Therapist</option>
-              <option value="Care Manager">Care Manager</option>
-              <option value="DMM">DMM</option>
-              <option value="Doctor - Geriatrician">Doctor - Geriatrician</option>
-              <option value="Doctor - GP">Doctor - GP</option>
-              <option value="Doctor - Psychiatrist">Doctor - Psychiatrist</option>
-              <option value="Financial Advisor">Financial Advisor</option>
-              <option value="HHA">HHA</option>
-              <option value="Nurse Practitioner">Nurse Practitioner</option>            
-              <option value="Physical Therapist">Physical Therapist</option>
-              <option value="Professional Organizer">Professional Organizer</option>
-              <option value="Physician's Assistant">Physician's Assistant</option>     
-              <option value="Registered Nurse">Registered Nurse</option>
-              <option value="Senior Living Consultants">Senior Living Consultants</option>
-              <option value="Senior Living Facility">Senior Living Facility</option>
-              <option value="Senior Mover">Senior Mover</option>
-              <option value="Social Worker">Social Worker</option>
-              <option value="Spouse">Spouse</option>
-              <option value="Mother">Mother</option>
-              <option value="Father">Father</option>
-              <option value="Grandchild">Grandchild</option>
-              <option value="Sibling">Sibling</option>
-              <option value="Child">Child</option>
-            </select>
+            <label for="relationshipRole">Relationship Role</label>
+            <select id="relationshipRole" style="width: 100%; padding: 6px;"></select>
           </div>
         </div>
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
+
+      // Populate the dropdowns dynamically from lookups
+      await loadLookups();
     }
 
-    async function saveRelationship() {
-      const type = document.getElementById("relationshipType").value.trim();
-      const role = document.getElementById("relationshipRole").value.trim();
+    // ===== Lookups =====
+    async function loadLookups() {
+      try {
+        const res = await fetch(`${ENDPOINT_LOOKUPS}/?types=relationship_type,relationship_role`);
+        const json = await res.json();
+        if (!json.success) return;
 
-      if (!type || !role) return alert("Type and Role are required.");
+        const typeSel = document.getElementById("relationshipType");
+        const roleSel = document.getElementById("relationshipRole");
+
+        function fill(select, items, placeholder) {
+          if (!select) return;
+          select.innerHTML = "";
+          const ph = document.createElement("option");
+          ph.value = "";
+          ph.textContent = placeholder;
+          select.appendChild(ph);
+
+          (items || []).forEach(it => {
+            const opt = document.createElement("option");
+            opt.value = it.value;
+            opt.textContent = it.value;
+            select.appendChild(opt);
+          });
+
+          const add = document.createElement("option");
+          add.value = "__add_new__";
+          add.textContent = "➕ Add new…";
+          select.appendChild(add);
+        }
+
+        fill(typeSel, json.data.relationship_type || [], "Select type");
+        fill(roleSel, json.data.relationship_role || [], "Select role");
+      } catch (e) {
+        console.warn("Lookup load failed:", e);
+      }
+    }
+
+    async function handleAddNew(selectEl, lookup_type) {
+      if (!selectEl || selectEl.value !== "__add_new__") return;
+
+      const friendly = lookup_type.replace('_', ' ');
+      const entered = (prompt(`Add new ${friendly}:`) || "").trim();
+      if (!entered) {
+        // Reset to blank if canceled/empty
+        selectEl.value = "";
+        return;
+      }
+
+      try {
+        const res = await fetch(ENDPOINT_LOOKUPS, {
+          method: "POST",
+          headers: { "Content-Type":"application/json" },
+          body: JSON.stringify({ lookup_type, value: entered })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert("Could not add value (it may already exist).");
+          selectEl.value = "";
+          return;
+        }
+
+        // Reload dropdowns and re-select the new item
+        await loadLookups();
+        Array.from(selectEl.options).forEach(o => {
+          if (o.value.toLowerCase() === entered.toLowerCase()) selectEl.value = o.value;
+        });
+      } catch (e) {
+        console.error("Add new lookup failed:", e);
+        alert("Unable to add value at this time.");
+        selectEl.value = "";
+      }
+    }
+
+    // ===== Save Relationship =====
+    async function saveRelationship() {
+      const type = (document.getElementById("relationshipType")?.value || "").trim();
+      const role = (document.getElementById("relationshipRole")?.value || "").trim();
+
+      if (!currentContact || !currentContact.contact_id) {
+        alert("Missing current contact.");
+        return;
+      }
+      if (!relatedContact || !relatedContact.contact_id) {
+        alert("Missing related contact.");
+        return;
+      }
+      if (!type || !role) {
+        alert("Type and Role are required.");
+        return;
+      }
+      if (currentContact.contact_id === relatedContact.contact_id) {
+        alert("Source and Related cannot be the same contact.");
+        return;
+      }
 
       const payload = {
         source_id: currentContact.contact_id,
         related_id: relatedContact.contact_id,
         relationship_type: type,
         relationship_role: role,
+        // optional meta (names) if you want to keep:
         source_first_name: currentContact.first_name,
         source_last_name: currentContact.last_name,
         related_first_name: relatedContact.first_name,
         related_last_name: relatedContact.last_name
       };
 
-      const res = await fetch("https://ghl-nyfo-save-relationship.dennis-e64.workers.dev", {
+      const res = await fetch(ENDPOINT_SAVE_REL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -321,7 +404,8 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // refresh relationships
+        // refresh relationships for the current contact
+        handleSearch();
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
@@ -329,3 +413,4 @@
   </script>
 </body>
 </html>
+
