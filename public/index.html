@@ -11,10 +11,7 @@
       margin: 0;
       padding: 20px;
     }
-    .container {
-      max-width: 900px;
-      margin: auto;
-    }
+    .container { max-width: 900px; margin: auto; }
     .box {
       background: white;
       border-radius: 8px;
@@ -22,73 +19,35 @@
       padding: 24px;
       margin-bottom: 24px;
     }
-    h2 {
-      margin-top: 0;
-    }
+    h2 { margin-top: 0; }
     .input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
+      display: flex; gap: 10px; margin-bottom: 10px;
     }
     input, select {
-      padding: 8px;
-      font-size: 16px;
-      flex: 1;
+      padding: 8px; font-size: 16px; flex: 1;
     }
     button {
-      background-color: #0057ff;
-      color: white;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 10px;
+      background-color: #0057ff; color: white;
+      padding: 10px 18px; border: none; border-radius: 4px;
+      cursor: pointer; margin-top: 10px;
     }
     .or-separator {
-      text-align: center;
-      margin: 10px 0;
-      font-weight: bold;
-      color: #555;
+      text-align: center; margin: 10px 0; font-weight: bold; color: #555;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #f0f0f0;
-    }
-    .hidden {
-      display: none;
-    }
-    .top-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .version {
-      color: #666;
-      font-size: 13px;
-      margin-top: 6px;
-    }
-    label {
-      display: block;
-      font-size: 13px;
-      color: #444;
-      margin-bottom: 4px;
-    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+    th { background-color: #f0f0f0; }
+    .hidden { display: none; }
+    .top-buttons { display: flex; gap: 10px; margin-top: 10px; }
+    .version { color: #666; font-size: 13px; margin-top: 6px; }
+    label { display: block; font-size: 13px; color: #444; margin-bottom: 4px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="box">
       <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.1</span></h2>
-      <p>Please enter either <strong>First &amp; Last Name</strong> or <strong>Email</strong>, not both.</p>
+      <p>Enter <strong>First and/or Last Name</strong> (min 3 letters; <code>*</code> = wildcard) or <strong>Email</strong>. Examples: <code>Ann*</code>, <code>Jo* Sm*</code>.</p>
       <div class="input-group">
         <input type="text" id="firstName" placeholder="First Name" />
         <input type="text" id="lastName" placeholder="Last Name" />
@@ -141,8 +100,6 @@
 
     // ===== Events =====
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
-
-    // Handle global change events for "Add new..." in selects
     document.addEventListener("change", (e) => {
       if (e.target?.id === "relationshipType") handleAddNew(e.target, "relationship_type");
       if (e.target?.id === "relationshipRole") handleAddNew(e.target, "relationship_role");
@@ -178,8 +135,8 @@
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
 
-      if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
+      if (!email && !first && !last) {
+        alert("Enter email or at least first or last name (min 3 letters; * allowed)");
         return;
       }
 
@@ -187,7 +144,9 @@
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+        if (first) url += `first=${encodeURIComponent(first)}&`;
+        if (last)  url += `last=${encodeURIComponent(last)}&`;
+        url = url.replace(/[&?]$/, "");
       }
 
       const res = await fetch(url);
@@ -240,8 +199,8 @@
       const first = document.getElementById("relatedFirstName").value.trim();
       const last = document.getElementById("relatedLastName").value.trim();
 
-      if (!email && (!first || !last)) {
-        alert("Enter either email or both first and last name");
+      if (!email && !first && !last) {
+        alert("Enter email or at least first or last name (min 3 letters; * allowed)");
         return;
       }
 
@@ -249,7 +208,9 @@
       if (email) {
         url += "email=" + encodeURIComponent(email);
       } else {
-        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+        if (first) url += `first=${encodeURIComponent(first)}&`;
+        if (last)  url += `last=${encodeURIComponent(last)}&`;
+        url = url.replace(/[&?]$/, "");
       }
 
       const res = await fetch(url);
@@ -281,7 +242,6 @@
         <button onclick="saveRelationship()">Save Relationship</button>
       `;
 
-      // Populate the dropdowns dynamically from lookups
       await loadLookups();
     }
 
@@ -328,11 +288,7 @@
 
       const friendly = lookup_type.replace('_', ' ');
       const entered = (prompt(`Add new ${friendly}:`) || "").trim();
-      if (!entered) {
-        // Reset to blank if canceled/empty
-        selectEl.value = "";
-        return;
-      }
+      if (!entered) { selectEl.value = ""; return; }
 
       try {
         const res = await fetch(ENDPOINT_LOOKUPS, {
@@ -348,7 +304,6 @@
           return;
         }
 
-        // Reload dropdowns and re-select the new item
         await loadLookups();
         Array.from(selectEl.options).forEach(o => {
           if (o.value.toLowerCase() === entered.toLowerCase()) selectEl.value = o.value;
@@ -365,21 +320,11 @@
       const type = (document.getElementById("relationshipType")?.value || "").trim();
       const role = (document.getElementById("relationshipRole")?.value || "").trim();
 
-      if (!currentContact || !currentContact.contact_id) {
-        alert("Missing current contact.");
-        return;
-      }
-      if (!relatedContact || !relatedContact.contact_id) {
-        alert("Missing related contact.");
-        return;
-      }
-      if (!type || !role) {
-        alert("Type and Role are required.");
-        return;
-      }
+      if (!currentContact?.contact_id) { alert("Missing current contact."); return; }
+      if (!relatedContact?.contact_id) { alert("Missing related contact."); return; }
+      if (!type || !role) { alert("Type and Role are required."); return; }
       if (currentContact.contact_id === relatedContact.contact_id) {
-        alert("Source and Related cannot be the same contact.");
-        return;
+        alert("Source and Related cannot be the same contact."); return;
       }
 
       const payload = {
@@ -387,7 +332,6 @@
         related_id: relatedContact.contact_id,
         relationship_type: type,
         relationship_role: role,
-        // optional meta (names) if you want to keep:
         source_first_name: currentContact.first_name,
         source_last_name: currentContact.last_name,
         related_first_name: relatedContact.first_name,
@@ -404,8 +348,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        // refresh relationships for the current contact
-        handleSearch();
+        handleSearch(); // refresh relationships
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
