@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.5</title>
+  <title>NYFO Dashboard v1.6</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -96,9 +96,6 @@
       border: 1px solid var(--border);
       width: 100%;
     }
-    input, select {
-      max-width: 100%;
-    }
 
     button {
       background-color: var(--primary);
@@ -112,9 +109,14 @@
     }
     button:hover { background-color: var(--primary-hover); }
 
-    .top-buttons { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-    .version { color: #666; font-size: 13px; margin-top: 6px; }
+    .top-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
 
+    .version { color: #666; font-size: 13px; margin-top: 6px; }
     label { display: block; font-size: 13px; color: #444; margin-bottom: 4px; }
     .hint { color:#555; font-size:13px; margin-top:6px; }
 
@@ -137,6 +139,7 @@
       max-height: 260px;
       overflow: auto;
     }
+
     .loader {
       display: none;
       margin-top: 10px;
@@ -152,7 +155,7 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.5</div>
+      <div class="header-version">Version 1.6</div>
     </div>
 
     <!-- Tabs -->
@@ -168,7 +171,7 @@
     <!-- ========================= -->
     <div id="tab1" class="tab-panel active">
       <div class="box">
-        <h2>Notes – Add &amp; Ingest (Phase 1)</h2>
+        <h2>Notes – Add &amp; Ingest</h2>
         <p style="font-size:14px; color:#4b5563;">
           Paste an email or meeting note below. This sends it to the <strong>nyfo-notes-ingest</strong> Worker,
           which creates a <em>note record</em> and <em>relationship candidates</em> in Supabase.
@@ -181,7 +184,7 @@
         <input id="externalId" type="text" placeholder="e.g., Gmail ID, GHL note id" />
 
         <div class="top-buttons">
-          <button id="uploadNoteBtn">Upload Note</button>
+          <button id="uploadNoteBtn" type="button">Upload Note</button>
           <button type="button" onclick="clearNoteForm()">Clear</button>
         </div>
 
@@ -190,44 +193,52 @@
         <div id="notesResult"></div>
 
         <p class="hint" style="margin-top:10px;">
-          Later, this tab will also show a table of <strong>notes needing review</strong> (Note History). For now,
-          it just lets you add notes and see the raw response.
+          Later, this tab will also show a table of <strong>notes needing review</strong>. For now,
+          it lets you add notes and see the raw response.
         </p>
       </div>
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 2: Note Review (placeholder) -->
+    <!-- TAB 2: Note Review -->
     <!-- ========================= -->
     <div id="tab2" class="tab-panel">
       <div class="box">
-        <h2>Note Review (Coming Next)</h2>
+        <h2>Note Review</h2>
         <p style="font-size:14px; color:#4b5563;">
-          This tab will let you pick a note from history, select which participant is the client,
-          map people to existing NYFO contacts, and choose which relationships to upload.
+          Load notes that need review, then select one to see its details and AI-detected participants.
         </p>
-        <p style="font-size:13px; color:#6b7280;">
-          For now, use <strong>Tab 1</strong> to ingest notes. Once we wire up the Supabase/Supabase Worker for
-          listing notes, this tab will become the main review workflow.
-        </p>
+
+        <div class="top-buttons">
+          <button type="button" onclick="loadNotesForReview(true)">Load Notes Needing Review</button>
+          <button type="button" onclick="loadNotesForReview(false)">Load All Recent Notes</button>
+        </div>
+
+        <div id="notesListContainer" style="margin-top:16px;">
+          <!-- Note list table will be injected here -->
+        </div>
+
+        <div id="noteDetailContainer" style="margin-top:20px;">
+          <!-- Selected note detail + participants will show here -->
+        </div>
       </div>
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 3: Note Relationships (placeholder) -->
+    <!-- TAB 3: Note Relationships (placeholder for now) -->
     <!-- ========================= -->
     <div id="tab3" class="tab-panel">
       <div class="box">
-        <h2>Note Relationships (Coming Next)</h2>
+        <h2>Note Relationships</h2>
         <p style="font-size:14px; color:#4b5563;">
-          This tab will eventually show <strong>relationships derived from notes</strong>, along with upload status,
-          cross-reference to the main NYFO relationship table, and search/filter tools.
+          This tab will eventually show <strong>relationships derived from notes</strong>, along with upload status
+          and cross-reference to the main NYFO relationship table.
         </p>
       </div>
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 4: Contact Search (existing code) -->
+    <!-- TAB 4: Contact Search (existing tool) -->
     <!-- ========================= -->
     <div id="tab4" class="tab-panel">
       <div class="box">
@@ -246,7 +257,7 @@
           <input type="text" id="email" placeholder="Email" />
         </div>
         <div class="top-buttons">
-          <button id="searchBtn">Search</button>
+          <button id="searchBtn" type="button">Search</button>
           <button type="button" onclick="clearSearch()">Clear</button>
           <button type="button" onclick="window.location.reload()">New Search</button>
         </div>
@@ -299,10 +310,31 @@
     });
 
     // =========================
+    // CONFIG ENDPOINTS
+    // =========================
+    const ENDPOINT_NOTES_INGEST = "https://nyfo-notes-ingest.dennis-e64.workers.dev"; // ✅ already working
+    const ENDPOINT_NOTES_API    = "https://nyfo-notes-api.dennis-e64.workers.dev";    // 👈 set to your new notes-api Worker
+
+    const ENDPOINT_SEARCH       = "https://ghl-nyfo-search.dennis-e64.workers.dev";
+    const ENDPOINT_REL_SEARCH   = "https://ghl-nyfo-relationship-search.dennis-e64.workers.dev";
+    const ENDPOINT_SAVE_REL     = "https://ghl-nyfo-save-relationship.dennis-e64.workers.dev";
+    const ENDPOINT_LOOKUPS      = "https://ghl-nyfo-lookups.dennis-e64.workers.dev";
+
+    // =========================
+    // Utility
+    // =========================
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // =========================
     // TAB 1: Notes Ingest
     // =========================
-    const ENDPOINT_NOTES_INGEST = "https://nyfo-notes-ingest.dennis-e64.workers.dev"; // TODO: update to your Worker URL
-
     document.getElementById("uploadNoteBtn").addEventListener("click", uploadNote);
 
     async function uploadNote() {
@@ -353,27 +385,167 @@
     }
 
     // =========================
-    // TAB 4: Existing Contact Search logic (unchanged)
+    // TAB 2: Note Review
     // =========================
 
-    // ===== Config =====
-    const ENDPOINT_SEARCH = "https://ghl-nyfo-search.dennis-e64.workers.dev";
-    const ENDPOINT_REL_SEARCH = "https://ghl-nyfo-relationship-search.dennis-e64.workers.dev";
-    const ENDPOINT_SAVE_REL = "https://ghl-nyfo-save-relationship.dennis-e64.workers.dev";
-    const ENDPOINT_LOOKUPS = "https://ghl-nyfo-lookups.dennis-e64.workers.dev";
+    async function loadNotesForReview(onlyNeedsReview) {
+      const container = document.getElementById("notesListContainer");
+      const detail = document.getElementById("noteDetailContainer");
+      container.innerHTML = "Loading notes...";
+      detail.innerHTML = "";
 
-    // ===== State =====
+      try {
+        const params = new URLSearchParams();
+        if (onlyNeedsReview) params.set("needs_review", "true");
+        params.set("limit", "50");
+
+        const res = await fetch(`${ENDPOINT_NOTES_API}/?${params.toString()}`);
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          container.innerHTML = "❌ Error loading notes.";
+          return;
+        }
+
+        if (!data.notes || data.notes.length === 0) {
+          container.innerHTML = "<p><em>No notes found.</em></p>";
+          return;
+        }
+
+        let html = `<table>
+          <tr>
+            <th>Created</th>
+            <th>Subject</th>
+            <th>From</th>
+            <th>Client</th>
+            <th>Needs Review</th>
+            <th>Action</th>
+          </tr>`;
+
+        data.notes.forEach(n => {
+          const created = n.created_at ? new Date(n.created_at).toLocaleString() : "";
+          const subj = n.subject || "(no subject)";
+          const from = n.from_name || "";
+          const client = n.client_contact_name || "";
+          const needs = n.needs_review ? "Yes" : "No";
+
+          html += `
+            <tr>
+              <td>${created}</td>
+              <td>${escapeHtml(subj)}</td>
+              <td>${escapeHtml(from)}</td>
+              <td>${escapeHtml(client)}</td>
+              <td>${needs}</td>
+              <td><button type="button" onclick="loadNoteDetail('${n.id}')">Review</button></td>
+            </tr>
+          `;
+        });
+
+        html += "</table>";
+        container.innerHTML = html;
+      } catch (err) {
+        console.error("Error loading notes:", err);
+        container.innerHTML = "❌ Unexpected error loading notes.";
+      }
+    }
+
+    async function loadNoteDetail(noteId) {
+      const detail = document.getElementById("noteDetailContainer");
+      detail.innerHTML = "Loading note detail...";
+
+      try {
+        const params = new URLSearchParams();
+        params.set("mode", "detail");
+        params.set("id", noteId);
+
+        const res = await fetch(`${ENDPOINT_NOTES_API}/?${params.toString()}`);
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          detail.innerHTML = "❌ Error loading note detail.";
+          return;
+        }
+
+        const note = data.note;
+        const relationships = data.relationships || [];
+
+        const created = note.created_at ? new Date(note.created_at).toLocaleString() : "";
+        const noteDate = note.note_date ? new Date(note.note_date).toLocaleString() : "";
+        const subj = note.subject || "(no subject)";
+        const fromName = note.from_name || "";
+        const fromEmail = note.from_email || "";
+        const summary = note.summary || "";
+        const needs = note.needs_review ? "Yes" : "No";
+        const status = note.review_status || "";
+        const client = note.client_contact_name || "";
+
+        let html = `
+          <h3>Note Detail</h3>
+          <p><strong>Subject:</strong> ${escapeHtml(subj)}</p>
+          <p><strong>From:</strong> ${escapeHtml(fromName)} ${fromEmail ? "(" + escapeHtml(fromEmail) + ")" : ""}</p>
+          <p><strong>Note Date:</strong> ${noteDate}</p>
+          <p><strong>Date Entered:</strong> ${created}</p>
+          <p><strong>Client (if set):</strong> ${escapeHtml(client)}</p>
+          <p><strong>Needs Review:</strong> ${needs} &nbsp;&nbsp; <strong>Status:</strong> ${escapeHtml(status)}</p>
+          <p><strong>Summary:</strong> ${escapeHtml(summary)}</p>
+
+          <details style="margin-top:10px;">
+            <summary style="cursor:pointer;">Show Full Raw Text</summary>
+            <pre style="white-space:pre-wrap; font-size:12px; background:#f3f4f6; padding:8px; border-radius:4px; margin-top:6px;">${escapeHtml(note.raw_text || "")}</pre>
+          </details>
+
+          <h4 style="margin-top:18px;">Participants Detected in Note</h4>
+        `;
+
+        if (relationships.length === 0) {
+          html += "<p><em>No participants were detected for this note.</em></p>";
+        } else {
+          html += `<table>
+            <tr>
+              <th>Raw Name</th>
+              <th>AI First</th>
+              <th>AI Last</th>
+              <th>Role / Type (AI)</th>
+              <th>Context</th>
+              <th>Related To (AI)</th>
+            </tr>`;
+
+          relationships.forEach(r => {
+            html += `
+              <tr>
+                <td>${escapeHtml(r.raw_name || "")}</td>
+                <td>${escapeHtml(r.first_name_ai || "")}</td>
+                <td>${escapeHtml(r.last_name_ai || "")}</td>
+                <td>${escapeHtml(r.role_label_ai || "")}</td>
+                <td>${escapeHtml(r.context_description_ai || "")}</td>
+                <td>${escapeHtml(r.related_to_name || "")}</td>
+              </tr>
+            `;
+          });
+
+          html += "</table>";
+        }
+
+        detail.innerHTML = html;
+      } catch (err) {
+        console.error("Error loading note detail:", err);
+        detail.innerHTML = "❌ Unexpected error loading note detail.";
+      }
+    }
+
+    // =========================
+    // TAB 4: Existing Contact Search logic
+    // =========================
+
     let currentContact = null;
     let relatedContact = null;
 
-    // ===== Events =====
     document.getElementById("searchBtn").addEventListener("click", handleSearch);
     document.addEventListener("change", (e) => {
       if (e.target?.id === "relationshipType") handleAddNew(e.target, "relationship_type");
       if (e.target?.id === "relationshipRole") handleAddNew(e.target, "relationship_role");
     });
 
-    // ===== UI Helpers =====
     function clearSearch() {
       document.getElementById("firstName").value = "";
       document.getElementById("lastName").value = "";
@@ -397,13 +569,11 @@
       document.getElementById("addBox").classList.remove("hidden");
     }
 
-    // ===== Core Actions =====
     async function handleSearch() {
       const email = document.getElementById("email").value.trim();
       const first = document.getElementById("firstName").value.trim();
       const last = document.getElementById("lastName").value.trim();
 
-      // Safeguards: if using name, require both first & last
       if (!email) {
         if (!first && !last) {
           alert("Enter email or both first and last name.");
@@ -447,7 +617,6 @@
                         <strong>Email:</strong> ${data.email} &nbsp;&nbsp;&nbsp;
                         <strong>Phone:</strong> ${data.phone}</p>`;
 
-      // fetch relationships
       const relRes = await fetch(`${ENDPOINT_REL_SEARCH}/?contact_id=${encodeURIComponent(data.contact_id)}`);
       const relData = await relRes.json();
 
@@ -472,7 +641,6 @@
       const first = document.getElementById("relatedFirstName").value.trim();
       const last = document.getElementById("relatedLastName").value.trim();
 
-      // Safeguards: if using name, require both first & last
       if (!email) {
         if (!first && !last) {
           alert("Enter email or both first and last name for the related contact.");
@@ -504,7 +672,6 @@
       relatedContact = data;
       const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
 
-      // Render Related block with empty selects; then load lookups
       result.innerHTML = `
         <p><strong>Related:</strong> ${name} (${data.email})</p>
         <div class="row" style="display: flex; gap: 10px; margin-top: 15px;">
@@ -523,7 +690,6 @@
       await loadLookups();
     }
 
-    // ===== Lookups =====
     async function loadLookups() {
       try {
         const res = await fetch(`${ENDPOINT_LOOKUPS}/?types=relationship_type,relationship_role`);
@@ -593,7 +759,6 @@
       }
     }
 
-    // ===== Save Relationship =====
     async function saveRelationship() {
       const type = (document.getElementById("relationshipType")?.value || "").trim();
       const role = (document.getElementById("relationshipRole")?.value || "").trim();
@@ -626,7 +791,7 @@
       if (result.success) {
         alert("Relationship saved!");
         document.getElementById("addBox").classList.add("hidden");
-        handleSearch(); // refresh relationships
+        handleSearch();
       } else {
         alert("Save failed: " + (result.error || "Unknown error"));
       }
