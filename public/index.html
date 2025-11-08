@@ -3,91 +3,359 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Contact Relationship Search</title>
+  <title>NYFO Dashboard v1.5</title>
   <style>
+    :root {
+      --bg: #f5f5f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --shadow: rgba(0,0,0,0.08);
+      --primary: #0057ff;
+      --primary-hover: #0044c7;
+      --text: #111827;
+      --muted: #6b7280;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f8;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
       margin: 0;
       padding: 20px;
+      color: var(--text);
     }
-    .container { max-width: 900px; margin: auto; }
+
+    .container { max-width: 1000px; margin: auto; }
+
+    .header {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 6px var(--shadow);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .header-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .header-version {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #374151;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
     .box {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      padding: 24px;
-      margin-bottom: 24px;
+      background: var(--card);
+      border-radius: 10px;
+      box-shadow: 0 2px 6px var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
     }
-    h2 { margin-top: 0; }
-    .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
-    input, select { padding: 8px; font-size: 16px; flex: 1; }
+
+    h2, h3 { margin-top: 0; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    input, select, textarea {
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      width: 100%;
+    }
+    input, select {
+      max-width: 100%;
+    }
+
     button {
-      background-color: #0057ff; color: white;
-      padding: 10px 18px; border: none; border-radius: 4px;
-      cursor: pointer; margin-top: 10px;
+      background-color: var(--primary);
+      color: white;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+      font-size: 14px;
     }
-    .or-separator { text-align: center; margin: 10px 0; font-weight: bold; color: #555; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
-    th { background-color: #f0f0f0; }
-    .hidden { display: none; }
-    .top-buttons { display: flex; gap: 10px; margin-top: 10px; }
+    button:hover { background-color: var(--primary-hover); }
+
+    .top-buttons { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
     .version { color: #666; font-size: 13px; margin-top: 6px; }
+
     label { display: block; font-size: 13px; color: #444; margin-bottom: 4px; }
     .hint { color:#555; font-size:13px; margin-top:6px; }
+
+    .or-separator { text-align: center; margin: 10px 0; font-weight: bold; color: #555; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+    th { background-color: #f3f4f6; }
+
+    .hidden { display: none; }
+
+    #notesResult {
+      margin-top: 16px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      font-size: 12px;
+      max-height: 260px;
+      overflow: auto;
+    }
+    .loader {
+      display: none;
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .loader.active { display: block; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="box">
-      <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.3</span></h2>
-      <p>
-        Enter <strong>Email</strong> <em>or</em> <strong>First &amp; Last Name</strong> (both required for name search; <code>*</code> wildcard allowed).<br/>
-        Examples: <code>Kar*</code> + <code>Nis*</code>
-      </p>
-      <div class="input-group">
-        <input type="text" id="firstName" placeholder="First Name" />
-        <input type="text" id="lastName" placeholder="Last Name" />
-      </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="email" placeholder="Email" />
-      </div>
-      <div class="top-buttons">
-        <button id="searchBtn">Search</button>
-        <button onclick="clearSearch()">Clear</button>
-        <button onclick="window.location.reload()">New Search</button>
-      </div>
-      <div class="hint">Tip: If using name, both fields must be filled. Use <code>*</code> for partials (e.g., <code>Ann*</code>).</div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="header-title">NYFO Dashboard</div>
+      <div class="header-version">Version 1.5</div>
     </div>
 
-    <div id="resultBox" class="box hidden">
-      <div id="contactInfo"></div>
-      <div id="relationshipResults"></div>
-      <button onclick="showAddRelationshipForm()">Add Relationship</button>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab1">Tab 1 – Note History</button>
+      <button class="tab-btn" data-tab="tab2">Tab 2 – Note Review</button>
+      <button class="tab-btn" data-tab="tab3">Tab 3 – Note Relationships</button>
+      <button class="tab-btn" data-tab="tab4">Tab 4 – Contact Search</button>
     </div>
 
-    <div id="addBox" class="box hidden">
-      <h3>Search Related Contact</h3>
-      <div class="input-group">
-        <input type="text" id="relatedFirstName" placeholder="First Name" />
-        <input type="text" id="relatedLastName" placeholder="Last Name" />
+    <!-- ========================= -->
+    <!-- TAB 1: Note History / Add Note -->
+    <!-- ========================= -->
+    <div id="tab1" class="tab-panel active">
+      <div class="box">
+        <h2>Notes – Add &amp; Ingest (Phase 1)</h2>
+        <p style="font-size:14px; color:#4b5563;">
+          Paste an email or meeting note below. This sends it to the <strong>nyfo-notes-ingest</strong> Worker,
+          which creates a <em>note record</em> and <em>relationship candidates</em> in Supabase.
+        </p>
+
+        <label for="noteText">Note / Email Content</label>
+        <textarea id="noteText" rows="10" placeholder="Paste the full text here..."></textarea>
+
+        <label for="externalId" style="margin-top:10px;">External ID (optional)</label>
+        <input id="externalId" type="text" placeholder="e.g., Gmail ID, GHL note id" />
+
+        <div class="top-buttons">
+          <button id="uploadNoteBtn">Upload Note</button>
+          <button type="button" onclick="clearNoteForm()">Clear</button>
+        </div>
+
+        <div id="notesLoader" class="loader">⏳ Processing note with OpenAI and saving to Supabase...</div>
+
+        <div id="notesResult"></div>
+
+        <p class="hint" style="margin-top:10px;">
+          Later, this tab will also show a table of <strong>notes needing review</strong> (Note History). For now,
+          it just lets you add notes and see the raw response.
+        </p>
       </div>
-      <div class="or-separator">— OR —</div>
-      <div class="input-group">
-        <input type="text" id="relatedEmail" placeholder="Email" />
-      </div>
-      <div class="top-buttons">
-        <button onclick="searchRelated()">Search Related Contact</button>
-        <button onclick="clearRelated()">Clear Related</button>
-      </div>
-      <div class="hint">If using name, enter both first &amp; last (wildcards <code>*</code> allowed).</div>
-      <div id="relatedResult"></div>
     </div>
+
+    <!-- ========================= -->
+    <!-- TAB 2: Note Review (placeholder) -->
+    <!-- ========================= -->
+    <div id="tab2" class="tab-panel">
+      <div class="box">
+        <h2>Note Review (Coming Next)</h2>
+        <p style="font-size:14px; color:#4b5563;">
+          This tab will let you pick a note from history, select which participant is the client,
+          map people to existing NYFO contacts, and choose which relationships to upload.
+        </p>
+        <p style="font-size:13px; color:#6b7280;">
+          For now, use <strong>Tab 1</strong> to ingest notes. Once we wire up the Supabase/Supabase Worker for
+          listing notes, this tab will become the main review workflow.
+        </p>
+      </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- TAB 3: Note Relationships (placeholder) -->
+    <!-- ========================= -->
+    <div id="tab3" class="tab-panel">
+      <div class="box">
+        <h2>Note Relationships (Coming Next)</h2>
+        <p style="font-size:14px; color:#4b5563;">
+          This tab will eventually show <strong>relationships derived from notes</strong>, along with upload status,
+          cross-reference to the main NYFO relationship table, and search/filter tools.
+        </p>
+      </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- TAB 4: Contact Search (existing code) -->
+    <!-- ========================= -->
+    <div id="tab4" class="tab-panel">
+      <div class="box">
+        <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.3</span></h2>
+        <p>
+          Enter <strong>Email</strong> <em>or</em> <strong>First &amp; Last Name</strong>
+          (both required for name search; <code>*</code> wildcard allowed).<br/>
+          Examples: <code>Kar*</code> + <code>Nis*</code>
+        </p>
+        <div class="input-group">
+          <input type="text" id="firstName" placeholder="First Name" />
+          <input type="text" id="lastName" placeholder="Last Name" />
+        </div>
+        <div class="or-separator">— OR —</div>
+        <div class="input-group">
+          <input type="text" id="email" placeholder="Email" />
+        </div>
+        <div class="top-buttons">
+          <button id="searchBtn">Search</button>
+          <button type="button" onclick="clearSearch()">Clear</button>
+          <button type="button" onclick="window.location.reload()">New Search</button>
+        </div>
+        <div class="hint">
+          Tip: If using name, both fields must be filled. Use <code>*</code> for partials (e.g., <code>Ann*</code>).
+        </div>
+      </div>
+
+      <div id="resultBox" class="box hidden">
+        <div id="contactInfo"></div>
+        <div id="relationshipResults"></div>
+        <button type="button" onclick="showAddRelationshipForm()">Add Relationship</button>
+      </div>
+
+      <div id="addBox" class="box hidden">
+        <h3>Search Related Contact</h3>
+        <div class="input-group">
+          <input type="text" id="relatedFirstName" placeholder="First Name" />
+          <input type="text" id="relatedLastName" placeholder="Last Name" />
+        </div>
+        <div class="or-separator">— OR —</div>
+        <div class="input-group">
+          <input type="text" id="relatedEmail" placeholder="Email" />
+        </div>
+        <div class="top-buttons">
+          <button type="button" onclick="searchRelated()">Search Related Contact</button>
+          <button type="button" onclick="clearRelated()">Clear Related</button>
+        </div>
+        <div class="hint">
+          If using name, enter both first &amp; last (wildcards <code>*</code> allowed).
+        </div>
+        <div id="relatedResult"></div>
+      </div>
+    </div>
+
   </div>
 
   <script>
+    // =========================
+    // Tabs logic
+    // =========================
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const tabId = btn.getAttribute("data-tab");
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(tabId).classList.add("active");
+      });
+    });
+
+    // =========================
+    // TAB 1: Notes Ingest
+    // =========================
+    const ENDPOINT_NOTES_INGEST = "https://nyfo-notes-ingest.dennis-e64.workers.dev"; // TODO: update to your Worker URL
+
+    document.getElementById("uploadNoteBtn").addEventListener("click", uploadNote);
+
+    async function uploadNote() {
+      const text = document.getElementById("noteText").value.trim();
+      const externalId = document.getElementById("externalId").value.trim();
+      const loader = document.getElementById("notesLoader");
+      const result = document.getElementById("notesResult");
+
+      if (!text) {
+        alert("Please paste some note or email text first.");
+        return;
+      }
+
+      loader.classList.add("active");
+      result.textContent = "";
+
+      try {
+        const res = await fetch(ENDPOINT_NOTES_INGEST, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text,
+            external_id: externalId || null
+          })
+        });
+
+        const data = await res.json();
+        loader.classList.remove("active");
+
+        if (!res.ok) {
+          result.textContent = "❌ Error:\n" + JSON.stringify(data, null, 2);
+          return;
+        }
+
+        result.textContent =
+          "✅ Note successfully processed and stored in Supabase.\n\n" +
+          JSON.stringify(data, null, 2);
+      } catch (err) {
+        loader.classList.remove("active");
+        result.textContent = "❌ Unexpected error:\n" + err;
+      }
+    }
+
+    function clearNoteForm() {
+      document.getElementById("noteText").value = "";
+      document.getElementById("externalId").value = "";
+      document.getElementById("notesResult").textContent = "";
+    }
+
+    // =========================
+    // TAB 4: Existing Contact Search logic (unchanged)
+    // =========================
+
     // ===== Config =====
     const ENDPOINT_SEARCH = "https://ghl-nyfo-search.dennis-e64.workers.dev";
     const ENDPOINT_REL_SEARCH = "https://ghl-nyfo-relationship-search.dennis-e64.workers.dev";
@@ -249,7 +517,7 @@
             <select id="relationshipRole" style="width: 100%; padding: 6px;"></select>
           </div>
         </div>
-        <button onclick="saveRelationship()">Save Relationship</button>
+        <button type="button" onclick="saveRelationship()">Save Relationship</button>
       `;
 
       await loadLookups();
