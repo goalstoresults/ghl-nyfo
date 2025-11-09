@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.91</title>
+  <title>NYFO Dashboard v1.93</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -148,7 +148,7 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.91</div>
+      <div class="header-version">Version 1.93</div>
     </div>
 
     <!-- Tabs -->
@@ -226,15 +226,12 @@
       <div class="box">
         <h2>Note Relationships</h2>
         <p style="font-size:14px; color:#4b5563;">
-          Select a note in <strong>Note History</strong>, open it in <strong>Note Review</strong>,
-          then click <strong>“Review Notes Relationship”</strong> to see AI-detected relationships for that note here.
+          No note selected yet. Use <strong>Note History</strong> → <strong>Note Review</strong> → 
+          <strong>Review Notes Relationship</strong> to load relationships for a specific note.
         </p>
 
         <div id="noteRelContainer" style="margin-top:16px;">
-          <p><em>
-            No note selected yet. Use <strong>Note History</strong> → <strong>Note Review</strong> →
-            <strong>Review Notes Relationship</strong> to load relationships for a specific note.
-          </em></p>
+          <!-- Relationships table will appear here once a note is loaded -->
         </div>
       </div>
     </div>
@@ -334,6 +331,7 @@
 
     // Track which note is open in Note Review
     let currentReviewedNoteId = null;
+    let pendingClientForNote = null;  // holds last client search result
 
     // =========================
     // Utility
@@ -468,6 +466,7 @@
       const detail = document.getElementById("noteDetailContainer");
       detail.innerHTML = "Loading note detail...";
       currentReviewedNoteId = noteId;
+      pendingClientForNote = null;
 
       try {
         const params = new URLSearchParams();
@@ -493,7 +492,8 @@
         const summary = note.summary || "";
         const needs = note.needs_review ? "Yes" : "No";
         const status = note.review_status || "";
-        const client = note.client_contact_name || "";
+        const clientName = note.client_contact_name || "";
+        const clientId = note.client_contact_id || null;
 
         let html = `
           <h3>Note Detail</h3>
@@ -501,7 +501,39 @@
           <p><strong>From:</strong> ${escapeHtml(fromName)} ${fromEmail ? "(" + escapeHtml(fromEmail) + ")" : ""}</p>
           <p><strong>Note Date:</strong> ${noteDate}</p>
           <p><strong>Date Entered:</strong> ${created}</p>
-          <p><strong>Client (if set):</strong> ${escapeHtml(client)}</p>
+        `;
+
+        // Client selection / display block
+        if (clientId) {
+          html += `
+            <p><strong>Client (for this note):</strong> ${escapeHtml(clientName)}</p>
+          `;
+        } else {
+          html += `
+            <div id="clientSearchBlock" style="margin:10px 0 16px;">
+              <p style="margin:0 0 6px;font-size:13px;color:#4b5563;">
+                No client set yet for this note. Search for the client contact in GHL (must already exist as a contact).
+              </p>
+              <div class="input-group">
+                <input type="text" id="clientFirstName" placeholder="First Name" />
+                <input type="text" id="clientLastName" placeholder="Last Name" />
+              </div>
+              <div class="or-separator">— OR —</div>
+              <div class="input-group">
+                <input type="text" id="clientEmail" placeholder="Email" />
+              </div>
+              <div class="top-buttons">
+                <button type="button" onclick="searchClientForCurrentNote()">Search Client</button>
+              </div>
+              <div class="hint">
+                If the client is not found, add them in GHL first, then return here and search again.
+              </div>
+              <div id="clientSearchResult" style="margin-top:8px;font-size:13px;"></div>
+            </div>
+          `;
+        }
+
+        html += `
           <p><strong>Needs Review:</strong> ${needs} &nbsp;&nbsp; <strong>Status:</strong> ${escapeHtml(status)}</p>
           <p><strong>Summary:</strong> ${escapeHtml(summary)}</p>
 
@@ -512,9 +544,23 @@
 
           <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
             <h4 style="margin:0;">Participants Detected in Note</h4>
+        `;
+
+        if (clientId) {
+          html += `
             <button type="button" onclick="reviewNoteRelationshipsForCurrentNote()">Review Notes Relationship</button>
-          </div>
-       `;
+          `;
+        }
+
+        html += `</div>`;
+
+        if (!clientId) {
+          html += `
+            <p style="margin-top:4px;font-size:13px;color:#b91c1c;">
+              Select a client for this note before reviewing relationships.
+            </p>
+          `;
+        }
 
         if (relationships.length === 0) {
           html += "<p style='margin-top:8px;'><em>No participants were detected for this note.</em></p>";
@@ -547,6 +593,100 @@
       } catch (err) {
         console.error("Error loading note detail:", err);
         detail.innerHTML = "❌ Unexpected error loading note detail.";
+      }
+    }
+
+    async function searchClientForCurrentNote() {
+      if (!currentReviewedNoteId) {
+        alert("No note is currently selected.");
+        return;
+      }
+
+      const email = (document.getElementById("clientEmail")?.value || "").trim();
+      const first = (document.getElementById("clientFirstName")?.value || "").trim();
+      const last  = (document.getElementById("clientLastName")?.value || "").trim();
+      const resultDiv = document.getElementById("clientSearchResult");
+
+      if (!email) {
+        if (!first && !last) {
+          alert("Enter email or both first and last name for the client.");
+          return;
+        }
+        if (!first || !last) {
+          alert("Please enter BOTH first and last name for the client (or use email).");
+          return;
+        }
+      }
+
+      let url = `${ENDPOINT_SEARCH}/?`;
+      if (email) {
+        url += "email=" + encodeURIComponent(email);
+      } else {
+        url += `first=${encodeURIComponent(first)}&last=${encodeURIComponent(last)}`;
+      }
+
+      resultDiv.innerHTML = "Searching client…";
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data || !data.contact_id || data.contact_id === "N/A") {
+          resultDiv.innerHTML = `
+            <span style="color:#b91c1c;">Client not found.</span>
+            <br/>If this is a new client, add them as a contact in GHL first, then return here and search again.
+          `;
+          pendingClientForNote = null;
+          return;
+        }
+
+        pendingClientForNote = data;
+        const name = `${data.first_name || ''} ${data.last_name || ''}`.trim() || "N/A";
+
+        resultDiv.innerHTML = `
+          <p>Found contact: <strong>${escapeHtml(name)}</strong> (${escapeHtml(data.email || '')})</p>
+          <button type="button" onclick="confirmClientForCurrentNote()">Use as Client for this Note</button>
+        `;
+      } catch (err) {
+        console.error("Error searching client:", err);
+        resultDiv.innerHTML = "<span style='color:#b91c1c;'>Error searching for client.</span>";
+      }
+    }
+
+    async function confirmClientForCurrentNote() {
+      if (!currentReviewedNoteId || !pendingClientForNote) {
+        alert("Missing note or client selection.");
+        return;
+      }
+
+      const client = pendingClientForNote;
+      const name = `${client.first_name || ''} ${client.last_name || ''}`.trim() || (client.email || "Unknown");
+
+      try {
+        const res = await fetch(ENDPOINT_NOTES_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "set_client",
+            note_id: currentReviewedNoteId,
+            client_contact_id: client.contact_id,
+            client_contact_name: name
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          console.error("Error setting client:", data);
+          alert("Could not set client for this note.");
+          return;
+        }
+
+        alert("Client set for this note.");
+        // Reload note detail so UI shows the client and enables the button
+        loadNoteDetail(currentReviewedNoteId);
+      } catch (err) {
+        console.error("Unexpected error setting client:", err);
+        alert("Unexpected error while setting client.");
       }
     }
 
@@ -897,3 +1037,4 @@
   </script>
 </body>
 </html>
+
