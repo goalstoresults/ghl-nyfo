@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.94</title>
+  <title>NYFO Dashboard v1.95</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -148,7 +148,7 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.94</div>
+      <div class="header-version">Version 1.95</div>
     </div>
 
     <!-- Tabs -->
@@ -369,15 +369,28 @@
           })
         });
 
-        const data = await res.json();
+        let data = null;
+        try {
+          data = await res.json();
+        } catch (e) {
+          console.warn("Could not parse JSON from notes-ingest response:", e);
+        }
 
-        if (!res.ok || !data.success) {
-          console.error("Notes ingest error:", data);
+        console.log("Notes ingest response:", res.status, data);
+
+        // Only treat as error if HTTP failed OR the API explicitly says success === false
+        if (!res.ok || (data && data.success === false)) {
           alert("Error processing note. Check console for details.");
           return;
         }
 
-        alert("Note successfully processed and stored.");
+        const noteId = data && (data.note_id || data.id);
+        if (noteId) {
+          alert(`Note successfully processed. Note ID: ${noteId}`);
+        } else {
+          alert("Note successfully processed and stored.");
+        }
+
         clearNoteForm();
       } catch (err) {
         console.error("Unexpected error:", err);
@@ -454,7 +467,6 @@
     }
 
     function reviewNote(noteId) {
-      // Switch to Note Review tab, then load the detail there
       activateTab("tab3");
       loadNoteDetail(noteId);
     }
@@ -506,7 +518,31 @@
         // Client selection / display block
         if (clientId) {
           html += `
-            <p><strong>Client (for this note):</strong> ${escapeHtml(clientName)}</p>
+            <p>
+              <strong>Client (for this note):</strong> ${escapeHtml(clientName)}
+              &nbsp;
+              <a href="#" onclick="showClientSearch();return false;">Change client</a>
+            </p>
+            <div id="clientSearchBlock" style="margin:10px 0 16px; display:none;">
+              <p style="margin:0 0 6px;font-size:13px;color:#4b5563;">
+                Search for the correct client contact in GHL (must already exist as a contact).
+              </p>
+              <div class="input-group">
+                <input type="text" id="clientFirstName" placeholder="First Name" />
+                <input type="text" id="clientLastName" placeholder="Last Name" />
+              </div>
+              <div class="or-separator">— OR —</div>
+              <div class="input-group">
+                <input type="text" id="clientEmail" placeholder="Email" />
+              </div>
+              <div class="top-buttons">
+                <button type="button" onclick="searchClientForCurrentNote()">Search Client</button>
+              </div>
+              <div class="hint">
+                If the client is not found, add them in GHL first, then return here and search again.
+              </div>
+              <div id="clientSearchResult" style="margin-top:8px;font-size:13px;"></div>
+            </div>
           `;
         } else {
           html += `
@@ -695,7 +731,6 @@
         }
 
         alert("Client set for this note.");
-        // Reload note detail so UI shows the client and enables the button
         loadNoteDetail(currentReviewedNoteId);
       } catch (err) {
         console.error("Unexpected error setting client:", err);
@@ -1050,3 +1085,4 @@
   </script>
 </body>
 </html>
+
