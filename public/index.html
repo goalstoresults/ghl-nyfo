@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.7</title>
+  <title>NYFO Dashboard v1.8</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -54,17 +54,22 @@
       flex-wrap: wrap;
     }
     .tab-btn {
-      border: 1px solid var(--border);
-      background: #f9fafb;
+      border: 2px solid var(--primary);
+      background: #ffffff;
       border-radius: 999px;
       padding: 6px 14px;
       font-size: 14px;
       cursor: pointer;
-      color: #374151;
+      color: var(--primary);
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover {
+      background: #f0f4ff;
     }
     .tab-btn.active {
       background: var(--primary);
-      color: white;
+      color: #ffffff;
       border-color: var(--primary);
     }
 
@@ -128,18 +133,6 @@
 
     .hidden { display: none; }
 
-    #notesResult {
-      margin-top: 16px;
-      background: #f3f4f6;
-      border-radius: 8px;
-      padding: 12px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      font-size: 12px;
-      max-height: 260px;
-      overflow: auto;
-    }
-
     .loader {
       display: none;
       margin-top: 10px;
@@ -155,23 +148,24 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.7</div>
+      <div class="header-version">Version 1.8</div>
     </div>
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab-btn active" data-tab="tab1">Tab 1 – Note History</button>
-      <button class="tab-btn" data-tab="tab2">Tab 2 – Note Review</button>
-      <button class="tab-btn" data-tab="tab3">Tab 3 – Note Relationships</button>
-      <button class="tab-btn" data-tab="tab4">Tab 4 – Contact Search</button>
+      <button class="tab-btn active" data-tab="tab1">Add Note</button>
+      <button class="tab-btn" data-tab="tab2">Note History</button>
+      <button class="tab-btn" data-tab="tab3">Note Review</button>
+      <button class="tab-btn" data-tab="tab4">Note Relationships</button>
+      <button class="tab-btn" data-tab="tab5">Contact Search</button>
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 1: Note History / Add Note -->
+    <!-- TAB 1: Add Note -->
     <!-- ========================= -->
     <div id="tab1" class="tab-panel active">
       <div class="box">
-        <h2>Notes – Add &amp; Ingest</h2>
+        <h2>Add Note</h2>
         <p style="font-size:14px; color:#4b5563;">
           Paste an email or meeting note below. This sends it to the <strong>nyfo-notes-ingest</strong> Worker,
           which creates a <em>note record</em> and <em>relationship candidates</em> in Supabase.
@@ -187,26 +181,18 @@
           <button id="uploadNoteBtn" type="button">Upload Note</button>
           <button type="button" onclick="clearNoteForm()">Clear</button>
         </div>
-
-        <div id="notesLoader" class="loader">⏳ Processing note with OpenAI and saving to Supabase...</div>
-
-        <div id="notesResult"></div>
-
-        <p class="hint" style="margin-top:10px;">
-          Later, this tab will also show a table of <strong>notes needing review</strong>. For now,
-          it lets you add notes and see the raw response.
-        </p>
+        <!-- per your request: no loader/result/hint after the two buttons -->
       </div>
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 2: Note Review -->
+    <!-- TAB 2: Note History -->
     <!-- ========================= -->
     <div id="tab2" class="tab-panel">
       <div class="box">
-        <h2>Note Review</h2>
+        <h2>Note History</h2>
         <p style="font-size:14px; color:#4b5563;">
-          Load notes that need review, then select one to see its details and AI-detected participants.
+          Load notes that need review, or all recent notes. Click <strong>Review</strong> to open the Note Review tab.
         </p>
 
         <div class="top-buttons">
@@ -217,17 +203,28 @@
         <div id="notesListContainer" style="margin-top:16px;">
           <!-- Note list table will be injected here -->
         </div>
+      </div>
+    </div>
 
-        <div id="noteDetailContainer" style="margin-top:20px;">
+    <!-- ========================= -->
+    <!-- TAB 3: Note Review -->
+    <!-- ========================= -->
+    <div id="tab3" class="tab-panel">
+      <div class="box">
+        <h2>Note Review</h2>
+        <p style="font-size:14px; color:#4b5563;">
+          Select a note from <strong>Note History</strong> to see its details and AI-detected participants here.
+        </p>
+        <div id="noteDetailContainer" style="margin-top:16px;">
           <!-- Selected note detail + participants will show here -->
         </div>
       </div>
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 3: Note Relationships -->
+    <!-- TAB 4: Note Relationships -->
     <!-- ========================= -->
-    <div id="tab3" class="tab-panel">
+    <div id="tab4" class="tab-panel">
       <div class="box">
         <h2>Note Relationships</h2>
         <p style="font-size:14px; color:#4b5563;">
@@ -246,11 +243,11 @@
     </div>
 
     <!-- ========================= -->
-    <!-- TAB 4: Contact Search (existing tool) -->
+    <!-- TAB 5: Contact Search (existing tool) -->
     <!-- ========================= -->
-    <div id="tab4" class="tab-panel">
+    <div id="tab5" class="tab-panel">
       <div class="box">
-        <h2>NYFO Contact Relationship Search Tools <span class="version">Version 1.3</span></h2>
+        <h2>Contact Relationship Search <span class="version">v1.3</span></h2>
         <p>
           Enter <strong>Email</strong> <em>or</em> <strong>First &amp; Last Name</strong>
           (both required for name search; <code>*</code> wildcard allowed).<br/>
@@ -307,28 +304,34 @@
     // =========================
     // Tabs logic
     // =========================
+    function activateTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+      const panel = document.getElementById(tabId);
+      if (btn) btn.classList.add("active");
+      if (panel) panel.classList.add("active");
+    }
+
     document.querySelectorAll(".tab-btn").forEach(btn => {
       btn.addEventListener("click", () => {
         const tabId = btn.getAttribute("data-tab");
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById(tabId).classList.add("active");
+        activateTab(tabId);
       });
     });
 
     // =========================
     // CONFIG ENDPOINTS
     // =========================
-    const ENDPOINT_NOTES_INGEST = "https://nyfo-notes-ingest.dennis-e64.workers.dev"; // already working
-    const ENDPOINT_NOTES_API    = "https://nyfo-notes-api.dennis-e64.workers.dev";    // your notes-api Worker
+    const ENDPOINT_NOTES_INGEST = "https://nyfo-notes-ingest.dennis-e64.workers.dev";
+    const ENDPOINT_NOTES_API    = "https://nyfo-notes-api.dennis-e64.workers.dev";
 
     const ENDPOINT_SEARCH       = "https://ghl-nyfo-search.dennis-e64.workers.dev";
     const ENDPOINT_REL_SEARCH   = "https://ghl-nyfo-relationship-search.dennis-e64.workers.dev";
     const ENDPOINT_SAVE_REL     = "https://ghl-nyfo-save-relationship.dennis-e64.workers.dev";
     const ENDPOINT_LOOKUPS      = "https://ghl-nyfo-lookups.dennis-e64.workers.dev";
 
-    // Supabase REST (for Tab 3 read-only view)
+    // Supabase REST (for Tab 4 read-only view)
     const SUPABASE_REST_URL = "https://cwzlbwqzosoreyndenok.supabase.co/rest/v1";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3emxid3F6b3NvcmV5bmRlbm9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTkyODIsImV4cCI6MjA2ODc3NTI4Mn0.6yZV9E0RcNaHqEfEmaBZH15RC02_FkxwiGMyuX0THdM";
 
@@ -345,23 +348,18 @@
     }
 
     // =========================
-    // TAB 1: Notes Ingest
+    // TAB 1: Add Note (Ingest)
     // =========================
     document.getElementById("uploadNoteBtn").addEventListener("click", uploadNote);
 
     async function uploadNote() {
       const text = document.getElementById("noteText").value.trim();
       const externalId = document.getElementById("externalId").value.trim();
-      const loader = document.getElementById("notesLoader");
-      const result = document.getElementById("notesResult");
 
       if (!text) {
         alert("Please paste some note or email text first.");
         return;
       }
-
-      loader.classList.add("active");
-      result.textContent = "";
 
       try {
         const res = await fetch(ENDPOINT_NOTES_INGEST, {
@@ -374,37 +372,33 @@
         });
 
         const data = await res.json();
-        loader.classList.remove("active");
 
-        if (!res.ok) {
-          result.textContent = "❌ Error:\n" + JSON.stringify(data, null, 2);
+        if (!res.ok || !data.success) {
+          console.error("Notes ingest error:", data);
+          alert("Error processing note. Check console for details.");
           return;
         }
 
-        result.textContent =
-          "✅ Note successfully processed and stored in Supabase.\n\n" +
-          JSON.stringify(data, null, 2);
+        alert("Note successfully processed and stored.");
+        clearNoteForm();
       } catch (err) {
-        loader.classList.remove("active");
-        result.textContent = "❌ Unexpected error:\n" + err;
+        console.error("Unexpected error:", err);
+        alert("Unexpected error while uploading note.");
       }
     }
 
     function clearNoteForm() {
       document.getElementById("noteText").value = "";
       document.getElementById("externalId").value = "";
-      document.getElementById("notesResult").textContent = "";
     }
 
     // =========================
-    // TAB 2: Note Review
+    // TAB 2: Note History
     // =========================
 
     async function loadNotesForReview(onlyNeedsReview) {
       const container = document.getElementById("notesListContainer");
-      const detail = document.getElementById("noteDetailContainer");
       container.innerHTML = "Loading notes...";
-      detail.innerHTML = "";
 
       try {
         const params = new URLSearchParams();
@@ -448,7 +442,7 @@
               <td>${escapeHtml(from)}</td>
               <td>${escapeHtml(client)}</td>
               <td>${needs}</td>
-              <td><button type="button" onclick="loadNoteDetail('${n.id}')">Review</button></td>
+              <td><button type="button" onclick="reviewNote('${n.id}')">Review</button></td>
             </tr>
           `;
         });
@@ -461,6 +455,15 @@
       }
     }
 
+    function reviewNote(noteId) {
+      // Switch to Note Review tab, then load the detail there
+      activateTab("tab3");
+      loadNoteDetail(noteId);
+    }
+
+    // =========================
+    // TAB 3: Note Review (detail)
+    // =========================
     async function loadNoteDetail(noteId) {
       const detail = document.getElementById("noteDetailContainer");
       detail.innerHTML = "Loading note detail...";
@@ -546,15 +549,15 @@
     }
 
     // =========================
-    // TAB 3: Note Relationships
+    // TAB 4: Note Relationships
     // =========================
     async function loadNoteRelationships(onlyPending) {
       const container = document.getElementById("noteRelContainer");
       container.innerHTML = "Loading relationships…";
 
       try {
-        // Build query string for Supabase REST
-        let qs = "select=id,note_id,first_name_ai,last_name_ai,role_label_ai,context_description_ai,related_to_name,upload_yn,nyfo_relationship_type,nyfo_relationship_level,created_at&order=created_at.desc&limit=100";
+        let qs =
+          "select=id,note_id,first_name_ai,last_name_ai,role_label_ai,context_description_ai,related_to_name,upload_yn,nyfo_relationship_type,nyfo_relationship_level,created_at&order=created_at.desc&limit=100";
         if (onlyPending) {
           qs += "&upload_yn=eq.false";
         }
@@ -619,7 +622,7 @@
     }
 
     // =========================
-    // TAB 4: Existing Contact Search logic
+    // TAB 5: Contact Search logic
     // =========================
 
     let currentContact = null;
