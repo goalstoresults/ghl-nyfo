@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.93</title>
+  <title>NYFO Dashboard v1.94</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -148,7 +148,7 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.93</div>
+      <div class="header-version">Version 1.94</div>
     </div>
 
     <!-- Tabs -->
@@ -510,9 +510,15 @@
           `;
         } else {
           html += `
-            <div id="clientSearchBlock" style="margin:10px 0 16px;">
+            <p>
+              <strong>Client (for this note):</strong>
+              <span style="color:#b91c1c;">(not set)</span>
+              &nbsp;
+              <a href="#" onclick="showClientSearch();return false;">Click here to search client</a>
+            </p>
+            <div id="clientSearchBlock" style="margin:10px 0 16px; display:none;">
               <p style="margin:0 0 6px;font-size:13px;color:#4b5563;">
-                No client set yet for this note. Search for the client contact in GHL (must already exist as a contact).
+                Search for the client contact in GHL (must already exist as a contact).
               </p>
               <div class="input-group">
                 <input type="text" id="clientFirstName" placeholder="First Name" />
@@ -593,6 +599,13 @@
       } catch (err) {
         console.error("Error loading note detail:", err);
         detail.innerHTML = "❌ Unexpected error loading note detail.";
+      }
+    }
+
+    function showClientSearch() {
+      const block = document.getElementById("clientSearchBlock");
+      if (block) {
+        block.style.display = "block";
       }
     }
 
@@ -1037,4 +1050,3 @@
   </script>
 </body>
 </html>
-
