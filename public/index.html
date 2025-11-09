@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.95</title>
+  <title>NYFO Dashboard v1.96</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -148,7 +148,7 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.95</div>
+      <div class="header-version">Version 1.96</div>
     </div>
 
     <!-- Tabs -->
@@ -325,13 +325,13 @@
     const ENDPOINT_SAVE_REL     = "https://ghl-nyfo-save-relationship.dennis-e64.workers.dev";
     const ENDPOINT_LOOKUPS      = "https://ghl-nyfo-lookups.dennis-e64.workers.dev";
 
-    // Supabase REST (for Note Relationships view)
     const SUPABASE_REST_URL = "https://cwzlbwqzosoreyndenok.supabase.co/rest/v1";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3emxid3F6b3NvcmV5bmRlbm9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTkyODIsImV4cCI6MjA2ODc3NTI4Mn0.6yZV9E0RcNaHqEfEmaBZH15RC02_FkxwiGMyuX0THdM";
 
-    // Track which note is open in Note Review
+    // Track note selection / filter
     let currentReviewedNoteId = null;
-    let pendingClientForNote = null;  // holds last client search result
+    let pendingClientForNote = null;
+    let lastNotesFilterNeedsReview = true; // remember last filter for reload after delete
 
     // =========================
     // Utility
@@ -378,7 +378,6 @@
 
         console.log("Notes ingest response:", res.status, data);
 
-        // Only treat as error if HTTP failed OR the API explicitly says success === false
         if (!res.ok || (data && data.success === false)) {
           alert("Error processing note. Check console for details.");
           return;
@@ -408,6 +407,8 @@
     // =========================
 
     async function loadNotesForReview(onlyNeedsReview) {
+      lastNotesFilterNeedsReview = !!onlyNeedsReview;
+
       const container = document.getElementById("notesListContainer");
       container.innerHTML = "Loading notes...";
 
@@ -436,7 +437,7 @@
             <th>From</th>
             <th>Client</th>
             <th>Needs Review</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>`;
 
         data.notes.forEach(n => {
@@ -453,7 +454,10 @@
               <td>${escapeHtml(from)}</td>
               <td>${escapeHtml(client)}</td>
               <td>${needs}</td>
-              <td><button type="button" onclick="reviewNote('${n.id}')">Review</button></td>
+              <td>
+                <button type="button" onclick="reviewNote('${n.id}')">Review</button>
+                <button type="button" onclick="deleteNote('${n.id}')">Delete</button>
+              </td>
             </tr>
           `;
         });
@@ -469,6 +473,51 @@
     function reviewNote(noteId) {
       activateTab("tab3");
       loadNoteDetail(noteId);
+    }
+
+    async function deleteNote(noteId) {
+      if (!noteId) return;
+
+      const confirmed = confirm("Are you sure you want to delete this note and all related relationships?");
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(ENDPOINT_NOTES_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "delete_note",
+            note_id: noteId
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          console.error("Error deleting note:", data);
+          alert("Could not delete note. See console for details.");
+          return;
+        }
+
+        // If the deleted note is the one currently displayed, clear the detail/relationships views
+        if (currentReviewedNoteId === noteId) {
+          currentReviewedNoteId = null;
+          pendingClientForNote = null;
+          const detail = document.getElementById("noteDetailContainer");
+          if (detail) {
+            detail.innerHTML = "<p style='font-size:14px;color:#4b5563;'>Note was deleted.</p>";
+          }
+          const relCont = document.getElementById("noteRelContainer");
+          if (relCont) {
+            relCont.innerHTML = "<p><em>No relationships loaded.</em></p>";
+          }
+        }
+
+        // Reload the note list using the last filter
+        loadNotesForReview(lastNotesFilterNeedsReview);
+      } catch (err) {
+        console.error("Unexpected error deleting note:", err);
+        alert("Unexpected error while deleting note.");
+      }
     }
 
     // =========================
@@ -515,7 +564,6 @@
           <p><strong>Date Entered:</strong> ${created}</p>
         `;
 
-        // Client selection / display block
         if (clientId) {
           html += `
             <p>
@@ -731,6 +779,7 @@
         }
 
         alert("Client set for this note.");
+        // Reload note detail so UI shows the client and enables the button
         loadNoteDetail(currentReviewedNoteId);
       } catch (err) {
         console.error("Unexpected error setting client:", err);
@@ -1085,4 +1134,3 @@
   </script>
 </body>
 </html>
-
