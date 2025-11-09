@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NYFO Dashboard v1.9</title>
+  <title>NYFO Dashboard v1.91</title>
   <style>
     :root {
       --bg: #f5f5f8;
@@ -148,7 +148,7 @@
     <!-- Header -->
     <div class="header">
       <div class="header-title">NYFO Dashboard</div>
-      <div class="header-version">Version 1.9</div>
+      <div class="header-version">Version 1.91</div>
     </div>
 
     <!-- Tabs -->
@@ -226,16 +226,15 @@
       <div class="box">
         <h2>Note Relationships</h2>
         <p style="font-size:14px; color:#4b5563;">
-          View all AI-detected participants from notes, check upload status, and see what’s still pending.
+          Select a note in <strong>Note History</strong>, open it in <strong>Note Review</strong>,
+          then click <strong>“Review Notes Relationship”</strong> to see AI-detected relationships for that note here.
         </p>
 
-        <div class="top-buttons">
-          <button type="button" onclick="loadNoteRelationships(false)">Load All</button>
-          <button type="button" onclick="loadNoteRelationships(true)">Show Pending Only</button>
-        </div>
-
         <div id="noteRelContainer" style="margin-top:16px;">
-          <!-- relationships table will be injected here -->
+          <p><em>
+            No note selected yet. Use <strong>Note History</strong> → <strong>Note Review</strong> →
+            <strong>Review Notes Relationship</strong> to load relationships for a specific note.
+          </em></p>
         </div>
       </div>
     </div>
@@ -329,7 +328,7 @@
     const ENDPOINT_SAVE_REL     = "https://ghl-nyfo-save-relationship.dennis-e64.workers.dev";
     const ENDPOINT_LOOKUPS      = "https://ghl-nyfo-lookups.dennis-e64.workers.dev";
 
-    // Supabase REST (for Tab 4 read-only view)
+    // Supabase REST (for Note Relationships view)
     const SUPABASE_REST_URL = "https://cwzlbwqzosoreyndenok.supabase.co/rest/v1";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN3emxid3F6b3NvcmV5bmRlbm9rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMxOTkyODIsImV4cCI6MjA2ODc3NTI4Mn0.6yZV9E0RcNaHqEfEmaBZH15RC02_FkxwiGMyuX0THdM";
 
@@ -515,7 +514,7 @@
             <h4 style="margin:0;">Participants Detected in Note</h4>
             <button type="button" onclick="reviewNoteRelationshipsForCurrentNote()">Review Notes Relationship</button>
           </div>
-        `;
+       `;
 
         if (relationships.length === 0) {
           html += "<p style='margin-top:8px;'><em>No participants were detected for this note.</em></p>";
@@ -563,76 +562,6 @@
     // =========================
     // TAB 4: Note Relationships
     // =========================
-    async function loadNoteRelationships(onlyPending) {
-      const container = document.getElementById("noteRelContainer");
-      container.innerHTML = "Loading relationships…";
-
-      try {
-        let qs =
-          "select=id,note_id,first_name_ai,last_name_ai,role_label_ai,context_description_ai,related_to_name,upload_yn,nyfo_relationship_type,nyfo_relationship_level,created_at&order=created_at.desc&limit=100";
-        if (onlyPending) {
-          qs += "&upload_yn=eq.false";
-        }
-
-        const res = await fetch(`${SUPABASE_REST_URL}/nyfo_notes_relationships?${qs}`, {
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          }
-        });
-
-        if (!res.ok) {
-          const t = await res.text();
-          console.error("Supabase error:", t);
-          container.innerHTML = "❌ Error loading relationships.";
-          return;
-        }
-
-        const rows = await res.json();
-        if (!rows || rows.length === 0) {
-          container.innerHTML = "<p><em>No relationships found.</em></p>";
-          return;
-        }
-
-        let html = `<table>
-          <tr>
-            <th>Created</th>
-            <th>Note ID</th>
-            <th>AI First</th>
-            <th>AI Last</th>
-            <th>Role / Type</th>
-            <th>Context</th>
-            <th>Related To</th>
-            <th>Upload YN</th>
-            <th>Rel Type</th>
-            <th>Rel Level</th>
-          </tr>`;
-
-        rows.forEach(r => {
-          const created = r.created_at ? new Date(r.created_at).toLocaleString() : "";
-          html += `
-            <tr>
-              <td>${created}</td>
-              <td>${r.note_id}</td>
-              <td>${escapeHtml(r.first_name_ai || "")}</td>
-              <td>${escapeHtml(r.last_name_ai || "")}</td>
-              <td>${escapeHtml(r.role_label_ai || "")}</td>
-              <td>${escapeHtml(r.context_description_ai || "")}</td>
-              <td>${escapeHtml(r.related_to_name || "")}</td>
-              <td>${r.upload_yn ? "✅" : "⏳"}</td>
-              <td>${escapeHtml(r.nyfo_relationship_type || "")}</td>
-              <td>${escapeHtml(r.nyfo_relationship_level || "")}</td>
-            </tr>`;
-        });
-
-        html += "</table>";
-        container.innerHTML = html;
-      } catch (err) {
-        console.error("Error loading note relationships:", err);
-        container.innerHTML = "❌ Unexpected error loading relationships.";
-      }
-    }
-
     async function loadNoteRelationshipsForNote(noteId) {
       const container = document.getElementById("noteRelContainer");
       container.innerHTML = "Loading relationships for this note…";
