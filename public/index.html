@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NYFO Dashboard v2.2</title>
+  <title>NYFO Dashboard v2.0 (Modular)</title>
 
   <style>
     :root {
@@ -18,76 +18,68 @@
     }
 
     body {
-      margin:0;
-      background:var(--bg);
-      font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;
-      padding:20px;
-      color:var(--text);
+      margin: 0;
+      background: var(--bg);
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+      padding: 20px;
+      color: var(--text);
     }
 
-    .container {
-      max-width:1100px;
-      margin:auto;
-    }
+    .container { max-width: 1100px; margin: auto; }
 
     /* HEADER */
     .header {
-      background:var(--card);
-      padding:16px 20px;
-      border-radius:10px;
-      box-shadow:0 2px 6px var(--shadow);
-      margin-bottom:16px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
+      background: var(--card);
+      padding: 16px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px var(--shadow);
+      margin-bottom: 16px;
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .header-title { font-size:22px; font-weight:600; }
-    .header-version { font-size:14px; color:var(--muted); }
+    .header-title { font-size: 22px; font-weight: 600; }
+    .header-version { font-size: 14px; color: var(--muted); }
 
     /* TABS */
-    .tabs {
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-bottom:20px;
-    }
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
     .tab-btn {
-      border:2px solid var(--primary);
-      padding:6px 16px;
-      border-radius:999px;
-      background:#ffffff;
-      cursor:pointer;
-      font-size:14px;
-      font-weight:500;
-      color:var(--primary);
-      transition:0.15s ease;
+      border: 2px solid var(--primary);
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary);
+      transition: 0.15s;
     }
-    .tab-btn:hover { background:#eef3ff; }
-    .tab-btn.active { background:var(--primary); color:#fff; }
+    .tab-btn.active { background: var(--primary); color: white; }
+    .tab-btn:hover { background: #eef3ff; }
 
-    .tab-panel { display:none; }
-    .tab-panel.active { display:block; }
+    /* PANELS */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     .box {
-      background:var(--card);
-      padding:20px;
-      border-radius:10px;
-      border:1px solid var(--border);
-      box-shadow:0 2px 6px var(--shadow);
-      min-height:120px;
+      background: var(--card);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px var(--shadow);
+      min-height: 150px;
     }
   </style>
 </head>
 
 <body>
-
 <div class="container">
 
+  <!-- HEADER -->
   <div class="header">
     <div class="header-title">NYFO Dashboard</div>
-    <div class="header-version">Version 2.0 (Modular Workers)</div>
+    <div class="header-version">Version 2.0</div>
   </div>
 
+  <!-- TABS -->
   <div class="tabs">
     <button class="tab-btn active" data-tab="tab1">Add Note</button>
     <button class="tab-btn" data-tab="tab2">Note History</button>
@@ -98,83 +90,110 @@
 
   <!-- PANELS -->
   <div id="tab1" class="tab-panel active">
-    <div class="box" id="tab1Content">Loading Add Note…</div>
+    <div id="tab1Content" class="box">Loading Add Note…</div>
   </div>
 
   <div id="tab2" class="tab-panel">
-    <div class="box" id="tab2Content">Loading Note History…</div>
+    <div id="tab2Content" class="box">Select tab to load Note History…</div>
   </div>
 
   <div id="tab3" class="tab-panel">
-    <div class="box" id="tab3Content">Loading Note Review…</div>
+    <div id="tab3Content" class="box">Select tab to load Note Review…</div>
   </div>
 
   <div id="tab4" class="tab-panel">
-    <div class="box" id="tab4Content">Loading Note Relationships…</div>
+    <div id="tab4Content" class="box">Select tab to load Relationships…</div>
   </div>
 
   <div id="tab5" class="tab-panel">
-    <div class="box" id="tab5Content">Loading Contact Search…</div>
+    <div id="tab5Content" class="box">Select tab to load Contact Search…</div>
   </div>
 
 </div>
 
+
 <script>
-/* ============================================================
-   TAB SWITCHING
-============================================================ */
+/* -----------------------------
+   MODULE WORKER ENDPOINTS
+------------------------------ */
+const MODULE_ENDPOINTS = {
+  tab1: "https://add-note-module.dennis-e64.workers.dev",
+  tab2: "https://note-history-module.dennis-e64.workers.dev",
+  tab3: "https://note-review-module.dennis-e64.workers.dev",
+  tab4: "https://note-relationships-module.dennis-e64.workers.dev",
+  tab5: "https://contact-search-module.dennis-e64.workers.dev"
+};
+
+/* Track which modules are already loaded */
+const loadedTabs = {};
+
+/* -----------------------------
+   TAB SWITCHING + LAZY LOADING
+------------------------------ */
 function activateTab(tabId) {
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  // Switch active tab button
+  document.querySelectorAll(".tab-btn").forEach(btn =>
+    btn.classList.remove("active")
+  );
+  document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add("active");
 
-  document.querySelector(`.tab-btn[data-tab="${tabId}"]`)?.classList.add("active");
-  document.getElementById(tabId)?.classList.add("active");
+  // Switch active panel
+  document.querySelectorAll(".tab-panel").forEach(panel =>
+    panel.classList.remove("active")
+  );
+  document.getElementById(tabId).classList.add("active");
 
-  // dynamically load worker UI
-  loadModule(tabId);
+  // Lazy load module if needed
+  if (!loadedTabs[tabId]) {
+    loadModule(tabId);
+  }
 }
 
+// Add listeners
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => activateTab(btn.dataset.tab));
 });
 
-/* ============================================================
-   MODULE WORKER ENDPOINTS
-============================================================ */
-const MODULES = {
-  tab1: "https://add-note-module.dennis-e64.workers.dev?project=nyfo",
-  tab2: "https://note-history-module.dennis-e64.workers.dev?project=nyfo",
-  tab3: "https://note-review-module.dennis-e64.workers.dev?project=nyfo",
-  tab4: "https://note-relationships-module.dennis-e64.workers.dev?project=nyfo",
-  tab5: "https://contact-search-module.dennis-e64.workers.dev?project=nyfo"
-};
 
-/* ============================================================
-   MODULE LOADER (Loads HTML from Workers)
-============================================================ */
+/* -----------------------------
+   LOAD MODULE (HTML + inline JS)
+------------------------------ */
 async function loadModule(tabId) {
-  const target = document.getElementById(tabId + "Content");
-  const endpoint = MODULES[tabId];
+  const endpoint = MODULE_ENDPOINTS[tabId];
+  const targetDiv = document.getElementById(tabId + "Content");
 
-  if (!endpoint) {
-    target.innerHTML = "Module not configured.";
-    return;
-  }
+  targetDiv.innerHTML = "Loading…";
 
   try {
-    target.innerHTML = "Loading…";
+    const res = await fetch(endpoint + "?project=nyfo");
+    const html = await res.text();
 
-    const res = await fetch(endpoint);
-    const text = await res.text();
+    targetDiv.innerHTML = html;
 
-    target.innerHTML = text;
-  } catch (err) {
-    target.innerHTML = "❌ Failed loading module.";
-    console.error("Module load failed:", tabId, err);
+    // Execute inline <script> tags returned by module
+    const scripts = targetDiv.querySelectorAll("script");
+    scripts.forEach(oldScript => {
+      const newScript = document.createElement("script");
+      if (oldScript.src) {
+        newScript.src = oldScript.src;
+      } else {
+        newScript.textContent = oldScript.textContent;
+      }
+      document.body.appendChild(newScript);
+      oldScript.remove();
+    });
+
+    loadedTabs[tabId] = true;
+  } 
+  catch (err) {
+    targetDiv.innerHTML = "❌ Error loading module.";
+    console.error(err);
   }
 }
 
-/* Load Tab1 on first page load */
+/* -----------------------------
+   INITIAL LOAD: TAB 1 ONLY
+------------------------------ */
 loadModule("tab1");
 </script>
 
